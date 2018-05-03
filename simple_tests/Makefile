@@ -1,7 +1,7 @@
 all: ldev
 
 ldev: ldev.c
-	gcc ldev.c -o ldev -lpcap
+	gcc ldev.c -o ldev.out -lpcap
 
 run: ldev
-	./ldev
+	./ldev.out
