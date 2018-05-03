@@ -1,8 +1,5 @@
 /* ldev.c
    Martin Casado
-   
-   To compile:
-   >gcc ldev.c -lpcap
 
    Looks for an interface, and lists the network ip
    and mask associated with that interface.
@@ -17,7 +14,7 @@
 
 int main(int argc, char **argv)
 {
-  char *dev; /* name of the device to use */ 
+  char *dev; /* name of the device to use */
   char *net; /* dot notation of the network address */
   char *mask;/* dot notation of the network mask    */
   int ret;   /* return code */
@@ -63,13 +60,13 @@ int main(int argc, char **argv)
   /* do the same as above for the device's mask */
   addr.s_addr = maskp;
   mask = inet_ntoa(addr);
-  
+
   if(mask == NULL)
   {
     perror("inet_ntoa");
     exit(1);
   }
-  
+
   printf("MASK: %s\n",mask);
 
   return 0;
