@@ -16,3 +16,4 @@ This project aims at building an easy-to-use tool that will parse a `pcap` file 
 * [The BSD Packet Filter: A New Architecture for User-level Packet Capture](http://www.tcpdump.org//papers/bpf-usenix93.pdf)
 * [`tcpdump` filters](http://alumni.cs.ucr.edu/~marios/ethereal-tcpdump.pdf)
 * [`libpcap` tutorial](http://yuba.stanford.edu/~casado/pcap)
+* [Using `libpcap` in C](https://www.devdungeon.com/content/using-libpcap-c)
