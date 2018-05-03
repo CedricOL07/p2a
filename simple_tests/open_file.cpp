@@ -12,6 +12,7 @@
 
 using namespace std;
 
+// declare function
 void packetHandler(u_char *userData, const struct pcap_pkthdr* pkthdr, const u_char* packet);
 
 int main(int argc, char **argv) {
@@ -35,7 +36,9 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+
 void packetHandler(u_char *userData, const struct pcap_pkthdr* pkthdr, const u_char* packet) {
+  // this is the function called in the pcap_loop()
   const struct ether_header* ethernetHeader;
   const struct ip* ipHeader;
   const struct tcphdr* tcpHeader;
@@ -46,13 +49,19 @@ void packetHandler(u_char *userData, const struct pcap_pkthdr* pkthdr, const u_c
   int dataLength = 0;
   string dataStr = "";
 
+  // get the Ethernet header
   ethernetHeader = (struct ether_header*)packet;
+
+  // check if packet is IP
   if (ntohs(ethernetHeader->ether_type) == ETHERTYPE_IP) {
+      // get IP header
       ipHeader = (struct ip*)(packet + sizeof(struct ether_header));
       inet_ntop(AF_INET, &(ipHeader->ip_src), sourceIp, INET_ADDRSTRLEN);
       inet_ntop(AF_INET, &(ipHeader->ip_dst), destIp, INET_ADDRSTRLEN);
 
+      // check if packet is TCP
       if (ipHeader->ip_p == IPPROTO_TCP) {
+          // gets information from packet
           tcpHeader = (tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
           sourcePort = ntohs(tcpHeader->source);
           destPort = ntohs(tcpHeader->dest);
