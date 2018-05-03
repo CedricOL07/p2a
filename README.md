@@ -7,7 +7,7 @@ This project aims at building an easy-to-use tool that will parse a `pcap` file 
 * [JB Durville](https://github.com/jbdrvl)
 
 
-## References
+## Documentation/References
 
 * [Proramming with pcap](http://www.tcpdump.org/pcap.html)
 * [Programming with Libpcap - Sniffing the Network From Your Own Application](http://recursos.aldabaknocking.com/libpcapHakin9LuisMartinGarcia.pdf)
