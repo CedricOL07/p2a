@@ -17,3 +17,4 @@ This project aims at building an easy-to-use tool that will parse a `pcap` file 
 * [`tcpdump` filters](http://alumni.cs.ucr.edu/~marios/ethereal-tcpdump.pdf)
 * [`libpcap` tutorial](http://yuba.stanford.edu/~casado/pcap)
 * [Using `libpcap` in C](https://www.devdungeon.com/content/using-libpcap-c)
+* [`pcap.h` manual page](http://www.manpagez.com/man/3/pcap/)
