@@ -8,30 +8,45 @@
 #include <netinet/if_ether.h>
 #include <time.h>
 
+
+
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet);
 void print_packet_info(const u_char *packet, struct pcap_pkthdr packet_header);
 
 int main(int argc, char **argv)
 {
 
-  char errbuf[PCAP_ERRBUF_SIZE];
+  char errbuf[PCAP_ERRBUF_SIZE];// tell us if there is an error
 
-  pcap_t *handle = pcap_open_offline(argv[1], errbuf);
+
+  pcap_t *handle = pcap_open_offline(argv[1], errbuf);// to retrieve a pcap file pass in argument
 
   if(handle == NULL){
     printf("Error : %s\n", errbuf);
   }
 
+  // allow to parse a pcap file, 0 show that unlimited loop, callback function, we don't have argument for the callbal function
   pcap_loop(handle, 0, my_packet_handler, NULL);
 
   return 0;
 }
 
+/*
+* Name : my_packet_handler
+* function :  function name that is the callback to be run on every packet captured
+*
+*/
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *packet_header,const u_char *packet_body)
 {
     print_packet_info(packet_body, *packet_header);
     return;
 }
+
+/*
+* Name : print_packet_info
+* function :  display packet info
+*
+*/
 void print_packet_info(const u_char *packet, struct pcap_pkthdr packet_header) {
     printf("Packet capture length: %d\n", packet_header.caplen);
     printf("Packet total length %d\n", packet_header.len);
