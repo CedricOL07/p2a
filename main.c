@@ -8,6 +8,11 @@
 #include <netinet/if_ether.h>
 #include <time.h>
 
+// SIGNATURES
+void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet);
+u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
+
+// RANDOM SUB-FUNCTIONS
 /* Convert 48 bit Ethernet ADDRess to ASCII.  */
 extern char *ether_ntoa (__const struct ether_addr *__addr) __THROW;
 extern char *ether_ntoa_r (__const struct ether_addr *__addr, char *__buf)
@@ -23,9 +28,7 @@ extern struct ether_addr *ether_aton_r (__const char *__asc,
 extern int ether_hostton (__const char *__hostname, struct ether_addr *__addr)
      __THROW;
 
-void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet);
-u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
-
+// MAIN
 int main(int argc, char **argv)
 {
 
@@ -46,7 +49,7 @@ int main(int argc, char **argv)
 
 /*
 * Name : my_packet_handler
-* function :  function name that is the callback to be run on every packet captured
+* function :  function is the callback to be run on every packet captured (called by <pcap_loop>)
 *             then display packet info
 *
 */
@@ -56,11 +59,11 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *packet_header,cons
   printf("Packet total length %d\n", packet_header->len);
 
   u_int16_t type = handle_ethernet(packet_header, packet_body);
-  
+  /*
   if(ntohs(type) == ETHERTYPE_IP) {
-    /* handle IP packet */
-    printf("IP Packet!\n");
+    // handle IP packet
   }
+  */
 }
 
 u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
@@ -76,21 +79,21 @@ u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet
             ,ether_ntoa((const struct ether_addr *)&eptr->ether_dhost));
 
     /* check to see if we have an ip packet */
-    if (ntohs (eptr->ether_type) == ETHERTYPE_IP)
-    {
-        fprintf(stdout,"(IP)");
-    }else  if (ntohs (eptr->ether_type) == ETHERTYPE_ARP)
-    {
+    if (ntohs(eptr->ether_type) == ETHERTYPE_IP) {
+        // IPv4
+        fprintf(stdout,"(IPv4)");
+    } else if (ntohs(eptr->ether_type) == ETHERTYPE_ARP) {
         fprintf(stdout,"(ARP)");
-    }else  if (ntohs (eptr->ether_type) == ETHERTYPE_REVARP)
-    {
+    } else if (ntohs(eptr->ether_type) == ETHERTYPE_REVARP) {
         fprintf(stdout,"(RARP)");
-    }else {
+    } else if (ntohs(eptr->ether_type)==34525){
+        // IPv6
+        fprintf(stdout,"(IPv6)");
+    } else {
         fprintf(stdout,"(?)");
         // exit(1);
     }
-    fprintf(stdout,"\n");
-
+    fprintf(stdout,"\n\n");
     return eptr->ether_type;
 }
 
