@@ -1,5 +1,5 @@
 main : main.c
-	gcc main.c -lpcap
+	gcc main.c -lpcap -o main.out
 
 run : main
-	./a.out test_pcap_file.pcapng
+	./main.out test_pcap_file.pcapng

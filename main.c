@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   pcap_t *handle = pcap_open_offline(argv[1], errbuf);// to retrieve a pcap file pass in argument
 
   if(handle == NULL){
-    printf("Error : %s\n", errbuf);
+    printf("[ERROR] %s\n", errbuf);
   }
 
   // allow to parse a pcap file, 0 show that unlimited loop, callback function, we don't have argument for the callbal function
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *packet_header,const u_char *packet_body)
 {
   //printf("Packet capture length: %d\n", packet_header->caplen);
-  printf("Packet total length %d\n", packet_header->len);
+  printf("New Packet:\nTotal length: %d\n", packet_header->len);
 
   u_int16_t type = handle_ethernet(packet_header, packet_body);
   /*
@@ -77,24 +77,25 @@ u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet
     /* lets start with the ether header... */
     eptr = (struct ether_header *) packet;
 
-    fprintf(stdout,"ethernet header source: %s"
+    fprintf(stdout,"[Ethernet] source: %s\n"
             ,ether_ntoa((const struct ether_addr *)&eptr->ether_shost));
-    fprintf(stdout," destination: %s "
+    fprintf(stdout,"[Ethernet] destination: %s\n"
             ,ether_ntoa((const struct ether_addr *)&eptr->ether_dhost));
 
     /* check to see if we have an ip packet */
+    fprintf(stdout, "[Internet] ");
     if (ntohs(eptr->ether_type) == ETHERTYPE_IP) {
         // IPv4
-        fprintf(stdout,"(IPv4)");
+        fprintf(stdout,"IPv4");
     } else if (ntohs(eptr->ether_type) == ETHERTYPE_ARP) {
-        fprintf(stdout,"(ARP)");
+        fprintf(stdout,"ARP");
     } else if (ntohs(eptr->ether_type) == ETHERTYPE_REVARP) {
-        fprintf(stdout,"(RARP)");
+        fprintf(stdout,"RARP");
     } else if (ntohs(eptr->ether_type)==34525){
         // IPv6
-        fprintf(stdout,"(IPv6)");
+        fprintf(stdout,"IPv6");
     } else {
-        fprintf(stdout,"(?)");
+        fprintf(stdout,"?");
         // exit(1);
     }
     fprintf(stdout,"\n\n");
