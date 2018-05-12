@@ -20,6 +20,11 @@ int main(int argc, char **argv) {
   char errbuf[PCAP_ERRBUF_SIZE];
 
   // open capture file for offline processing
+  if(argc<2) {
+    printf("[ERROR] Missing the pcap file as argument!\nUsage: ./open.out my_file.pcap\n");
+    return 1;
+  }
+
   descr = pcap_open_offline(argv[1], errbuf);
   if (descr == NULL) {
       cout << "pcap_open_live() failed: " << errbuf << endl;

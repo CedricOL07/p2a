@@ -34,6 +34,10 @@ int main(int argc, char **argv)
 
   char errbuf[PCAP_ERRBUF_SIZE];// tell us if there is an error
 
+  if(argc<2) {
+    printf("[ERROR] Missing the pcap file as argument!\nUsage: ./a.out my_file.pcap\n");
+    return 1;
+  }
 
   pcap_t *handle = pcap_open_offline(argv[1], errbuf);// to retrieve a pcap file pass in argument
 
