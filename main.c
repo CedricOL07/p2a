@@ -1,32 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <pcap.h>  /* GIMME a libpcap plz! */
+#include <pcap.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <time.h>
+#include <net/ethernet.h>
+#include <netinet/ether.h>
+#include <netinet/ip.h>
+#include <linux/tcp.h> // TCP
+
 
 // SIGNATURES
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet);
 u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
-
-// RANDOM SUB-FUNCTIONS
-/* Convert 48 bit Ethernet ADDRess to ASCII.  */
-extern char *ether_ntoa (__const struct ether_addr *__addr) __THROW;
-extern char *ether_ntoa_r (__const struct ether_addr *__addr, char *__buf)
-     __THROW;
-
-/* Convert ASCII string S to 48 bit Ethernet address.  */
-extern struct ether_addr *ether_aton (__const char *__asc) __THROW;
-extern struct ether_addr *ether_aton_r (__const char *__asc,
-					struct ether_addr *__addr) __THROW;
-
-/* Map HOSTNAME to 48 bit Ethernet address.  */
-/* Map HOSTNAME to 48 bit Ethernet address.  */
-extern int ether_hostton (__const char *__hostname, struct ether_addr *__addr)
-     __THROW;
 
 // MAIN
 int main(int argc, char **argv)
@@ -60,7 +49,7 @@ int main(int argc, char **argv)
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *packet_header,const u_char *packet_body)
 {
   //printf("Packet capture length: %d\n", packet_header->caplen);
-  printf("New Packet:\nTotal length: %d\n", packet_header->len);
+  printf("Packet:\nTotal length: %d\n", packet_header->len);
 
   u_int16_t type = handle_ethernet(packet_header, packet_body);
   /*
@@ -73,27 +62,44 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *packet_header,cons
 u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
     // http://yuba.stanford.edu/~casado/pcap/section4.html
     struct ether_header *eptr;  /* net/ethernet.h */
+    const struct ip* ipHeader;
+    const struct tcphdr* tcpHeader;
+    char sourceIp[INET_ADDRSTRLEN];
+    char destIp[INET_ADDRSTRLEN];
+    u_int sourcePort, destPort;
 
     /* lets start with the ether header... */
     eptr = (struct ether_header *) packet;
 
-    fprintf(stdout,"[Ethernet] source: %s\n"
-            ,ether_ntoa((const struct ether_addr *)&eptr->ether_shost));
-    fprintf(stdout,"[Ethernet] destination: %s\n"
+    fprintf(stdout,"[Ethernet] %s -> %s\n"
+            ,ether_ntoa((const struct ether_addr *)&eptr->ether_shost)
             ,ether_ntoa((const struct ether_addr *)&eptr->ether_dhost));
 
     /* check to see if we have an ip packet */
-    fprintf(stdout, "[Internet] ");
+    fprintf(stdout, "[Protocol] ");
     if (ntohs(eptr->ether_type) == ETHERTYPE_IP) {
         // IPv4
-        fprintf(stdout,"IPv4");
+        fprintf(stdout,"IPv4\n");
+        ipHeader = (struct ip*)(packet + sizeof(struct ether_header));
+        inet_ntop(AF_INET, &(ipHeader->ip_src), sourceIp, INET_ADDRSTRLEN);
+        inet_ntop(AF_INET, &(ipHeader->ip_dst), destIp, INET_ADDRSTRLEN);
+        if (ipHeader->ip_p == IPPROTO_TCP) {
+          //tcpHeader = (tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
+          //sourcePort = ntohs(tcpHeader->source);
+          //destPort = ntohs(tcpHeader->dest);
+          printf("[TCP] %s -> %s\n", sourceIp, destIp);
+        }
     } else if (ntohs(eptr->ether_type) == ETHERTYPE_ARP) {
         fprintf(stdout,"ARP");
     } else if (ntohs(eptr->ether_type) == ETHERTYPE_REVARP) {
         fprintf(stdout,"RARP");
     } else if (ntohs(eptr->ether_type)==34525){
         // IPv6
-        fprintf(stdout,"IPv6");
+        fprintf(stdout,"IPv6\n");
+        ipHeader = (struct ip*)(packet + sizeof(struct ether_header));
+        if (ipHeader->ip_p == IPPROTO_TCP) {
+          printf("TCP\n");
+        }
     } else {
         fprintf(stdout,"?");
         // exit(1);
