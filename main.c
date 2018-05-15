@@ -54,6 +54,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       //printf("Packet:\nTotal length: %d\n", header->len);
       /* First, lets make sure we have an IP packet */
       const struct sniff_tcp *tcp; /* The TCP header */
+      struct tcphdr *tcphdr = NULL;
       struct ether_header *eth_header;
         /* TCP header */
     	typedef u_int tcp_seq;
@@ -135,10 +136,15 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       }
       else { printf("It is a TCP packet.\n\n");}
 
+      /* Find start of TCP header */
+      tcp_header = packet + ethernet_header_length +ip_header_length;
+
+      tcp = (struct tcp *)(tcp_header);
       //this is already there in the code:
           printf("   Src port: %d\n", ntohs(tcp->th_sport));
           printf("   Dst port: %d\n", ntohs(tcp->th_dport));
 
+      tcp = (struct tcp *)(tcp_header+22);
       //you add:
           if (tcp->th_flags & TH_SYN){
               printf("   Flag: TH_SYN");
