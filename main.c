@@ -83,8 +83,6 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
     		u_short th_urp;		/* urgent pointer */
       };
 
-
-      printf("\nPacket number %d:\n", count);
 	    count++;
 
       eth_header = (struct ether_header *) packet;
@@ -101,8 +99,8 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
          than what we currently have captured. If the snapshot
          length set with pcap_open_live() is too small, you may
          not have the whole packet. */
-      printf("Total packet available: %d bytes\n", header->caplen);
-      printf("Expected packet size: %d bytes\n", header->len);
+      /*printf("Total packet available: %d bytes\n", header->caplen);
+      printf("Expected packet size: %d bytes\n", header->len);*/
 
       /* Pointers to start point of various headers */
       const u_char *ip_header;
@@ -131,68 +129,35 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
          Protocol is always the 10th byte of the IP header */
       u_char protocol = *(ip_header + 9);
       if (protocol != IPPROTO_TCP) {
-          printf("Not a TCP packet. Skipping...\n\n");
+          printf("\nNot a TCP packet. Skipping...\n\n");
           return;
       }
-      else { printf("It is a TCP packet.\n\n");}
-
+      else { printf("\nIt is a TCP packet\n");}
+      printf("Packet number %d:\n", count);
       /* Find start of TCP header */
       tcp_header = packet + ethernet_header_length +ip_header_length;
 
-      tcp = (struct tcp *)(tcp_header);
+      tcp = (struct tcp *)(tcp_header);// move to the tcp layer  and we can get the information
       //this is already there in the code:
-          printf("   Src port: %d\n", ntohs(tcp->th_sport));
-          printf("   Dst port: %d\n", ntohs(tcp->th_dport));
-
-      tcp = (struct tcp *)(tcp_header+22);
+          printf("Src port: %d\n", ntohs(tcp->th_sport));
+          printf("Dst port: %d\n", ntohs(tcp->th_dport));
       //you add:
           if (tcp->th_flags & TH_SYN){
-              printf("   Flag: TH_SYN");
+              printf("Flag: TH_SYN\n");
           }
           else if (tcp->th_flags & TH_ACK){
-              printf("   Flag: TH_ACK");
+              printf("Flag: TH_ACK\n");
           }
           else if (tcp->th_flags & TH_RST){
-              printf("   Flag: TH_RST");
+              printf("Flag: TH_RST\n");
           }
           else if (tcp->th_flags & TH_SYNACK){
-              printf("   Flag: TH_SYNACK");
+              printf("Flag: TH_SYNACK\n");
           }
           else if (tcp->th_flags & TH_RSTACK){
-              printf("   Flag: TH_RSTACK");
+              printf("Flag: TH_RSTACK\n");
           }
 
-      /* Add the ethernet and ip header length to the start of the packet
-         to find the beginning of the TCP header */
-      tcp_header = packet + ethernet_header_length + ip_header_length;
-      /* TCP header length is stored in the first half
-         of the 12th byte in the TCP header. Because we only want
-         the value of the top half of the byte, we have to shift it
-         down to the bottom half otherwise it is using the most
-         significant bits instead of the least significant bits */
-      tcp_header_length = ((*(tcp_header + 12)) & 0xF0) >> 4;
-      /* The TCP header length stored in those 4 bits represents
-         how many 32-bit words there are in the header, just like
-         the IP header length. We multiply by four again to get a
-         byte count. */
-      tcp_header_length = tcp_header_length * 4;
-      printf("TCP header length in bytes: %d\n", tcp_header_length);
-
-      /* Add up all the header sizes to find the payload offset */
-    /*  int total_headers_size = ethernet_header_length+ip_header_length+tcp_header_length;
-      printf("Size of all headers combined: %d bytes\n", total_headers_size);
-      payload_length = header->caplen -
-          (ethernet_header_length + ip_header_length + tcp_header_length);
-      printf("Payload size: %d bytes\n", payload_length);
-      payload = packet + total_headers_size;
-      printf("Memory address where payload begins: %p\n\n", payload);
-
-  //u_int16_t type = handle_ethernet(packet_header, packet_body);
-  /*
-  if(ntohs(type) == ETHERTYPE_IP) {
-    // handle IP packet
-  }
-  */
 }
 
 u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet) {
