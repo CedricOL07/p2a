@@ -49,13 +49,14 @@ int main(int argc, char **argv)
 */
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet)
 {
-      static int count = 1;                   /* packet counter */
+      static int count = 1; /* packet counter */
       //printf("Packet capture length: %d\n", packet_header->caplen);
       //printf("Packet:\nTotal length: %d\n", header->len);
       /* First, lets make sure we have an IP packet */
       const struct sniff_tcp *tcp; /* The TCP header */
       struct tcphdr *tcphdr = NULL;
       struct ether_header *eth_header;
+
         /* TCP header */
     	typedef u_int tcp_seq;
 
@@ -139,26 +140,27 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 
       tcp = (struct tcp *)(tcp_header);// move to the tcp layer  and we can get the information
 
-          printf("Src port: %d\n", ntohs(tcp->th_sport));
-          printf("Dst port: %d\n", ntohs(tcp->th_dport));
-          printf("acknowledge number: %u\n", ntohs(tcp->th_ack));
-          printf("sequence number: %u\n", ntohs(tcp->th_seq));
+      printf("Src port: %d\n", ntohs(tcp->th_sport));
+      printf("Dst port: %d\n", ntohs(tcp->th_dport));
+      printf("sequence number: %ld\n", ntohl(tcp->th_seq));
+      printf("acknowledge number: %ld\n", ntohl(tcp->th_ack));
 
-          if (tcp->th_flags & TH_SYN){
-              printf("Flag: TH_SYN\n");
-          }
-          else if (tcp->th_flags & TH_ACK){
-              printf("Flag: TH_ACK\n");
-          }
-          else if (tcp->th_flags & TH_RST){
-              printf("Flag: TH_RST\n");
-          }
-          else if (tcp->th_flags & TH_SYNACK){
-              printf("Flag: TH_SYNACK\n");
-          }
-          else if (tcp->th_flags & TH_RSTACK){
-              printf("Flag: TH_RSTACK\n");
-          }
+
+      if (tcp->th_flags & TH_SYN){
+          printf("Flag: TH_SYN\n");
+      }
+      else if (tcp->th_flags & TH_ACK){
+          printf("Flag: TH_ACK\n");
+      }
+      else if (tcp->th_flags & TH_RST){
+          printf("Flag: TH_RST\n");
+      }
+      else if (tcp->th_flags & TH_SYNACK){
+          printf("Flag: TH_SYNACK\n");
+      }
+      else if (tcp->th_flags & TH_RSTACK){
+          printf("Flag: TH_RSTACK\n");
+      }
 
 }
 
