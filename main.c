@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   if (strcmp(check,"yes") == 0)
   {
     loop_local_capt = true;
-    printf("loop_local_capt : %d\n", loop_local_capt);
+
   }
   else{ loop_local_capt = false;}
 
