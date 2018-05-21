@@ -180,7 +180,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       printf("sequence number: %u\n", ntohl(tcp->th_seq));
       printf("acknowledge number: %u\n", ntohl(tcp->th_ack));
       int sequence = ntohl(tcp->th_ack);
-      if (count > 1 && sequence == sequenceprev ) {printf("Be careful, there is 2 consecutive sequences that the same.");}
+      if (count > 1 && sequence == sequenceprev ) {printf("Be careful, there is 2 consecutive sequences that are the same sequence number.");}
 
       if (count == 1 ) {sequenceprev = ntohl(tcp->th_ack);};
 
