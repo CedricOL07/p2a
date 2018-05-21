@@ -11,23 +11,45 @@
 #include <netinet/ether.h>
 #include <netinet/ip.h>
 #include <linux/tcp.h> // TCP
+#include <stdbool.h>
 #include "header.h"
-//int cpt = 0;
-
-// SIGNATURES
-void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet);
-u_int16_t handle_ethernet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
-
+#include<string.h>
+#define MAX_STRING_LEN 4
+extern bool loop_local_capt;
 // MAIN
 int main(int argc, char **argv)
 {
-
+  fflush(stdin);
+  bool loop_local_capt = false;
+  //printf("boolean : %d",loop_local_capt);
   char errbuf[PCAP_ERRBUF_SIZE];// tell us if there is an error
 
+  char check[MAX_STRING_LEN];
+  //printf("check : %s\n",check );
   if(argc<2) {
     printf("[ERROR] Missing the pcap file as argument!\nUsage: ./a.out my_file.pcap\n");
     return 1;
   }
+
+  printf("Does Your pcap file have been done with the local loop (127.0.0.1)? (yes or no)");
+
+  // check if the condition is valid or not
+   do{
+    scanf(" %s", check);
+    //printf("no : %d", strcmp(check,"no"));
+    if (strcmp(check,"no") != 0 && strcmp(check,"yes") !=0){
+      printf("\nYou have to write either yes or no. Please try again : ");
+      scanf("value : %s", check);
+    }
+  }while (strcmp(check,"no") != 0 && strcmp(check,"yes") != 0);
+
+
+  if (strcmp(check,"yes") == 0)
+  {
+    loop_local_capt = true;
+    printf("loop_local_capt : %d", loop_local_capt);
+  }
+  else{ loop_local_capt = false;}
 
   pcap_t *handle = pcap_open_offline(argv[1], errbuf);// to retrieve a pcap file pass in argument
 
@@ -49,6 +71,7 @@ int main(int argc, char **argv)
 */
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet)
 {
+      bool loop_local_capt;
       static int count = 1; /* packet counter */
       static int sequenceprev = 1 ;
       //printf("Packet capture length: %d\n", header->caplen);
@@ -86,7 +109,11 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 
 	    count++;
 
+      if (loop_local_capt == true){
       eth_header = (struct ether_header *) (packet + 2); // add 2 byte in the packet because we work with  linux cooked capture
+      }
+      else {eth_header = (struct ether_header *) (packet);}
+
       // guess a condition which take apart of the name of the file anf there is linuxcookcap we need to add 2 bits to the packets.
       if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
           printf("Not an IP packet. Skipping...\n\n");
@@ -108,9 +135,13 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       const u_char *ip_header;
       const u_char *tcp_header;
       const u_char *payload;
+      int ethernet_header_length;
 
       /* Header lengths in bytes */
-      int ethernet_header_length = 16; /* Doesn't change */// add 2 byte in the packet because we work with  linux cooked capture
+      if (loop_local_capt == true){
+      ethernet_header_length = 16; /* Doesn't change */// add 2 byte in the packet because we work with  linux cooked capture
+      }
+      else {ethernet_header_length = 14; }
       int ip_header_length;
       int tcp_header_length;
       int payload_length;
