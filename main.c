@@ -50,6 +50,7 @@ int main(int argc, char **argv)
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet)
 {
       static int count = 1; /* packet counter */
+      static int sequenceprev = 1 ;
       //printf("Packet capture length: %d\n", header->caplen);
       //printf("Packet:\nTotal length: %d\n", header->len);
       struct ether_header *eth_header;
@@ -88,7 +89,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       eth_header = (struct ether_header *) (packet + 2); // add 2 byte in the packet because we work with  linux cooked capture
       // guess a condition which take apart of the name of the file anf there is linuxcookcap we need to add 2 bits to the packets.
       if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
-          printf("Not an IP packet. Skipping...%\n\n");
+          printf("Not an IP packet. Skipping...\n\n");
           return;
       }
 
@@ -138,12 +139,30 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       /* Find start of TCP header */
       tcp_header = packet + ethernet_header_length + ip_header_length;
       tcp =  (struct tcp*)(tcp_header);// move to the tcp layer  and we can get the information
+      /*int *stockseqnumber;
+      stockseqnumber = (int*) malloc(50 * sizeof(int));
+      int taille = size_t malloc_usable_size (void *stockseqnumber);
 
+      if (taille >3 ){ free (stockseqnumber); }
+      */
       printf("Src port: %u\n", ntohs(tcp->th_sport));
       printf("Dst port: %u\n", ntohs(tcp->th_dport));
+
       printf("sequence number: %u\n", ntohl(tcp->th_seq));
       printf("acknowledge number: %u\n", ntohl(tcp->th_ack));
-      //stockseqnumber = malloc(sizeof(int));
+      int sequence = ntohl(tcp->th_ack);
+      if (count > 1 && sequence == sequenceprev ) {printf("Be careful, there is 2 consecutive sequences that the same.");}
+
+      if (count == 1 ) {sequenceprev = ntohl(tcp->th_ack);};
+
+      /*for (int i = 0 ; i < taille; i++)
+      {
+        if (stockseqnumber[i-1] == stockseqnumber[i] && &stockseqnumber[i-1] != NULL)
+        {
+          printf("We have the same consecutive sequence number");
+        }
+
+      }*/
 
       switch (tcp->th_flags) {
         case TH_SYN:
@@ -168,5 +187,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
           printf("Flag: TH_FIN\n");
           break;
       }
+
+      if (count >1 ) {sequenceprev = ntohl(tcp->th_ack);}
 
 }
