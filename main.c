@@ -15,13 +15,11 @@
 #include "header.h"
 #include<string.h>
 #define MAX_STRING_LEN 4
-extern bool loop_local_capt;
+bool loop_local_capt = false; // define there is linux cooked capture or not for the ethernet layerµ.
 // MAIN
 int main(int argc, char **argv)
 {
   fflush(stdin);
-  bool loop_local_capt = false;
-  //printf("boolean : %d",loop_local_capt);
   char errbuf[PCAP_ERRBUF_SIZE];// tell us if there is an error
 
   char check[MAX_STRING_LEN];
@@ -47,7 +45,7 @@ int main(int argc, char **argv)
   if (strcmp(check,"yes") == 0)
   {
     loop_local_capt = true;
-    printf("loop_local_capt : %d", loop_local_capt);
+    printf("loop_local_capt : %d\n", loop_local_capt);
   }
   else{ loop_local_capt = false;}
 
@@ -71,7 +69,7 @@ int main(int argc, char **argv)
 */
 void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_char *packet)
 {
-      bool loop_local_capt;
+
       static int count = 1; /* packet counter */
       static int sequenceprev = 1 ;
       //printf("Packet capture length: %d\n", header->caplen);
@@ -138,7 +136,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       int ethernet_header_length;
 
       /* Header lengths in bytes */
-      if (loop_local_capt == true){
+      if (loop_local_capt == 1){
       ethernet_header_length = 16; /* Doesn't change */// add 2 byte in the packet because we work with  linux cooked capture
       }
       else {ethernet_header_length = 14; }
