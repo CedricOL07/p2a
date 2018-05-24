@@ -75,6 +75,16 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       //printf("Packet capture length: %d\n", header->caplen);
       //printf("Packet:\nTotal length: %d\n", header->len);
       struct ether_header *eth_header;
+
+      #define D_HOST_MAC_ADDR  6
+
+      /* Ethernet header */
+      struct sniff_ethernet {
+              u_char  ether_dhost[D_HOST_MAC_ADDR];    /* destination host address */
+              u_char  ether_shost;    /* source host address */
+              u_short ether_type;                     /* IP? ARP? RARP? etc */
+      };
+      const struct sniff_ethernet *ethernet;
       /* First, lets make sure we have an IP packet */
 
       /* TCP header */
@@ -112,6 +122,10 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       }
       else {eth_header = (struct ether_header *) (packet);}
 
+      ethernet = (struct sniff_ethernet*)(packet);
+
+      printf("\nSource MAC address is : %s\n", ether_ntoa(&ethernet->ether_shost));
+      printf("Destination MAC address is : %s\n", ether_ntoa(&ethernet->ether_dhost));
       // guess a condition which take apart of the name of the file anf there is linuxcookcap we need to add 2 bits to the packets.
       if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
           printf("Not an IP packet. Skipping...\n\n");
@@ -160,10 +174,10 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
          Protocol is always the 10th byte of the IP header */
       u_char protocol = *(ip_header + 9);
       if (protocol != IPPROTO_TCP) {
-          printf("\nNot a TCP packet. Skipping...\n\n");
+          printf("Not a TCP packet. Skipping...\n\n");
           return;
       }
-      else { printf("\nIt is a TCP packet\n");}
+      else { printf("It is a TCP packet\n");}
       printf("Packet number %d:\n", count);
       /* Find start of TCP header */
       tcp_header = packet + ethernet_header_length + ip_header_length;
