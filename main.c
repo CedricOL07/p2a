@@ -191,7 +191,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       ip_header_length = ip_header_length * 4;
       //printf("IP header length (IHL) in bytes: %d\n", ip_header_length);
       ip_layer = (struct ip_layer*)(ip_header);
-      printf("TTL : %d\n", ntohs(ip_layer->ip_ttl));
+      printf("TTL : %d\n", (ip_layer->ip_ttl)); //ntohs
 
       /* Now that we know where the IP header is, we can
          inspect the IP header for a protocol number to
