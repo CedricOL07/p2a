@@ -1,10 +1,13 @@
-#Makefile - compile our program - example : "make run"  in your terminal
-main : main.c header.h
-			gcc main.c -lpcap -o main.out
+CC = gcc
+CFLAGS = -Wall
+DEPS = utils.h
+LIBS = -lpcap
+OBJ = main.o utils.o
 
+all: main
 
-run : main
-			./main.out ./pcap_files/overlappingv2.pcapng
+%.o: %.c $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-clean :
-			rm main.out
+main: $(OBJ)
+	$(CC) $(CFLAGS) -o main.out $^ $(LIBS)
