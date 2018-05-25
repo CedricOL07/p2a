@@ -4,7 +4,7 @@ main : main.c header.h
 
 
 run : main
-			./main.out overlappingv2.pcapng
+			./main.out ./pcap_files/overlappingv2.pcapng
 
 clean :
 			rm main.out

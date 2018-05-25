@@ -6,8 +6,9 @@ This project aims at building an easy-to-use tool that will parse a `pcap` file 
 * [Cedric Olivero](https://github.com/CedricOL07)
 * [JB Durville](https://github.com/jbdrvl)
 
+> We name all of our executables as `.out` files so that it is easy to leave them out (with `.gitignore`) when committing changes. 
 
-## Documentation/References
+## References and external documentation
 
 * [Proramming with pcap](http://www.tcpdump.org/pcap.html)
 * [Programming with Libpcap - Sniffing the Network From Your Own Application](http://recursos.aldabaknocking.com/libpcapHakin9LuisMartinGarcia.pdf)
