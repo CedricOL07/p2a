@@ -22,6 +22,7 @@
 
 #define D_HOST_MAC_ADDR 6
 #define MAX_STRING_LEN 4
+#define TTL_THRESHOLD 10 // 0 <= TTL <= 255
 
 bool loop_local_capt = false; // define if there is linux cooked capture or not for the ethernet layer.
 
@@ -141,6 +142,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       printf("Source MAC address is : %s\n", ether_ntoa(&ethernet->ether_shost));
       printf("Destination MAC address is : %s\n", ether_ntoa(&ethernet->ether_dhost));
       // guess a condition which take apart of the name of the file anf there is linuxcookcap we need to add 2 bits to the packets.
+      // i
       if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
           printf("Not an IP packet. Skipping...\n\n");
           return;
@@ -160,7 +162,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       /* Pointers to start point of various headers */
       const u_char *ip_header;
       const u_char *tcp_header;
-      const u_char *payload;
+      //const u_char *payload;
       int ethernet_header_length;
 
       /* Header lengths in bytes */
@@ -169,8 +171,8 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       }
       else {ethernet_header_length = 14; }
       int ip_header_length;
-      int tcp_header_length;
-      int payload_length;
+      //int tcp_header_length;
+      //int payload_length;
 
       /* Find start of IP header */
       ip_header = packet + ethernet_header_length;
@@ -183,6 +185,10 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       //printf("IP header length (IHL) in bytes: %d\n", ip_header_length);
       ip_layer = (struct ip_layer*)(ip_header);
       printf("TTL : %d\n", (ip_layer->ip_ttl)); //ntohs
+
+      if (ip_layer->ip_ttl<TTL_THRESHOLD) {
+        printf("[TTL] Low TTL encountered.\n");
+      }
 
       /* Now that we know where the IP header is, we can
          inspect the IP header for a protocol number to
