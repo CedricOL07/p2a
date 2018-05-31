@@ -35,7 +35,7 @@ int check_local_capture()
 {
   char check[MAX_STRING_LEN];
 
-  printf("Does Your pcap file have been done with the local loop (127.0.0.1)? (yes or no)");
+  printf("Is your pcap file a 'Linux cooked capture'? (yes or no): ");
 
   // check if the condition is valid or not
   do {
