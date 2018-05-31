@@ -53,7 +53,7 @@ Some versions of `netcat` have an option to specify the TTL we want our packets 
 * Server:
 
 ```sh
-nc -l -M 5 127.0.0.1 5555
+nc -l -M 5 5555
 ```
 
 * Client:
