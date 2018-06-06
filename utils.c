@@ -66,6 +66,10 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 
       static int count = 1; /* packet counter */
       static int sequenceprev = 1 ;
+      static int ackprev = 1;
+      static int src_port_prev = 1;
+      static int dest_port_prev = 1;
+      static int flags_prev = 1;
       //printf("Packet capture length: %d\n", header->caplen);
       //printf("Packet:\nTotal length: %d\n", header->len);
       struct ether_header *eth_header;
@@ -210,15 +214,29 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 
       if (taille >3 ){ free (stockseqnumber); }
       */
-      printf("Src port: %u\n", ntohs(tcp->th_sport));
-      printf("Dst port: %u\n", ntohs(tcp->th_dport));
+      int sequence = ntohl(tcp->th_seq);
+      int ack = ntohl(tcp->th_ack);
+      int src_port = ntohs(tcp->th_sport);
+      int dest_port = ntohs(tcp->th_dport);
+      int flags = tcp->th_flags;
 
-      printf("sequence number: %u\n", ntohl(tcp->th_seq));
-      printf("acknowledge number: %u\n", ntohl(tcp->th_ack));
-      int sequence = ntohl(tcp->th_ack);
-      if (count > 1 && sequence == sequenceprev ) {printf("Be careful, there is 2 consecutive sequences that are the same sequence number.\n");}
+      printf("Src port: %u\n", src_port);
+      printf("Dst port: %u\n", dest_port);
 
-      if (count == 1 ) {sequenceprev = ntohl(tcp->th_ack);};
+      printf("sequence number: %u\n", sequence);
+      printf("acknowledge number: %u\n", ack);
+
+      if (count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
+       {printf("/!\\ TCP retransmission /!\\\n");}
+
+      if (count == 1 ) {
+        sequenceprev = sequence;
+        ackprev = ack;
+        src_port_prev = src_port;
+        dest_port_prev = dest_port;
+        flags_prev = flags;
+
+      }
 
       /*for (int i = 0 ; i < taille; i++)
       {
@@ -253,6 +271,14 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
           break;
       }
 
-      if (count >1 ) {sequenceprev = ntohl(tcp->th_ack);}
+      if (count > 1 ) {
+        sequenceprev = sequence;
+        ackprev = ack;
+        src_port_prev = src_port;
+        dest_port_prev = dest_port;
+        flags_prev = flags;
+
+
+      }
 
 }
