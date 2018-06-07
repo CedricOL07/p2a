@@ -70,8 +70,6 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       static int src_port_prev = 1;
       static int dest_port_prev = 1;
       static int flags_prev = 1;
-      //printf("Packet capture length: %d\n", header->caplen);
-      //printf("Packet:\nTotal length: %d\n", header->len);
       struct ether_header *eth_header;
 
       /* Ethernet header */
@@ -86,6 +84,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       /* IPv6 header. RFC 2460, section3.
       Reading /usr/include/netinet/ip6.h is interesting */
       /* IP header */
+      const struct sniff_ip *ip_layer;
       struct sniff_ip {
               u_char  ip_vhl;                 /* version << 4 | header length >> 2 */
               u_char  ip_tos;                 /* type of service */
@@ -104,7 +103,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       #define IP_HL(ip)               (((ip)->ip_vhl) & 0x0f)
       #define IP_V(ip)                (((ip)->ip_vhl) >> 4)
 
-      const struct sniff_ip *ip_layer;
+
 
       /* TCP header */
       const struct sniff_tcp *tcp;
@@ -166,6 +165,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       /* Pointers to start point of various headers */
       const u_char *ip_header;
       const u_char *tcp_header;
+      const u_char *udp_header;
       //const u_char *payload;
       int ethernet_header_length;
 
@@ -205,6 +205,17 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       }
       else if(protocol == IPPROTO_UDP && protocol != IPPROTO_TCP){
         printf("It is a UDP packet\n");
+        printf("Total length : %d\n", ntohs(ip_layer->ip_len));
+        int total_length = ntohs(ip_layer->ip_len);
+        /* Find start of TCP header */
+        udp_header = packet + ethernet_header_length + ip_header_length;
+        int udp =  *(int *)(udp_header + 4);// showing the length of udp packet
+        printf("udp length : %d\n", ntohs(udp));
+        int udp_length = ntohs(udp);
+        if (udp_length > total_length ){
+          printf("/!\\ OVERLAPPING FRAGLENT /!\\\n");
+        }
+
       }
       else { printf("It is a TCP packet\n");
 
