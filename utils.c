@@ -222,8 +222,8 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 
       /* Find start of TCP header */
       tcp_header = packet + ethernet_header_length + ip_header_length;
-      tcp =  (struct tcp*)(tcp_header);// move to the tcp layer  and we can get the information
-    
+      tcp =  (struct tcp*)(tcp_header);// move to the tcp layer  and we can get the informations
+
       int sequence = ntohl(tcp->th_seq);
       int ack = ntohl(tcp->th_ack);
       int src_port = ntohs(tcp->th_sport);
