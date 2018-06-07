@@ -199,11 +199,14 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
          make sure it is TCP before going any further.
          Protocol is always the 10th byte of the IP header */
       u_char protocol = *(ip_header + 9);
-      if (protocol != IPPROTO_TCP) {
-          printf("Not a TCP packet. Skipping...\n\n");
+      if (protocol != IPPROTO_TCP && protocol != IPPROTO_UDP) {
+          printf("Not a TCP or UDP packet. Skipping...\n\n");
           return;
       }
-      else { printf("It is a TCP packet\n");}
+      else if(protocol == IPPROTO_UDP && protocol != IPPROTO_TCP){
+        printf("It is a UDP packet\n");
+      }
+      else { printf("It is a TCP packet\n");
 
       /* Find start of TCP header */
       tcp_header = packet + ethernet_header_length + ip_header_length;
@@ -280,5 +283,6 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 
 
       }
+    }
 
 }
