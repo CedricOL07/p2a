@@ -207,12 +207,12 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
         printf("It is a UDP packet\n");
         printf("Total length : %d\n", ntohs(ip_layer->ip_len));
         int total_length = ntohs(ip_layer->ip_len);
-
+        int udp_length = ntohs(udp);
         /* Find start of UDP header */
         udp_header = packet + ethernet_header_length + ip_header_length;
         int udp =  *(int *)(udp_header + 4);// showing the length of udp packet and add 4 to place us at the length of the packet
         printf("udp length : %d\n", ntohs(udp));
-        int udp_length = ntohs(udp);
+
         if (udp_length > total_length ){
           printf("/!\\ OVERLAPPING FRAGLENT /!\\\n");
         }
