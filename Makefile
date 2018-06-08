@@ -10,4 +10,4 @@ all: main
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 main: $(OBJ)
-	$(CC) $(CFLAGS) -o pacapp $^ $(LIBS)
+	$(CC) $(CFLAGS) -o p2a $^ $(LIBS)

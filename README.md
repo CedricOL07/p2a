@@ -1,4 +1,4 @@
-# PCAP - TCP packets Analyser
+# p2a - Parse PCAP for Anomalies
 
 This project aims at building an easy-to-use tool that will parse a `pcap` file to return any ambiguity found in the TCP packets.
 
@@ -18,7 +18,7 @@ __Outline:__
 ```sh
 make
 
-./pacapp ./pcap_files/some_pcap_file.pcapng
+./p2a ./pcap_files/some_pcap_file.pcapng
 ```
 
 ### <a name="anomalies"></a>Anomalies
