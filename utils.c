@@ -23,6 +23,14 @@
 #define D_HOST_MAC_ADDR 6
 #define MAX_STRING_LEN 4
 #define TTL_THRESHOLD 10 // 0 <= TTL <= 255
+#define RED   "\x1B[31m"
+#define GRN   "\x1B[32m"
+#define YEL   "\x1B[33m"
+#define BLU   "\x1B[34m"
+#define MAG   "\x1B[35m"
+#define CYN   "\x1B[36m"
+#define WHT   "\x1B[37m"
+#define RESET "\x1B[0m"
 
 bool loop_local_capt = false; // define if there is linux cooked capture or not for the ethernet layer.
 
@@ -202,7 +210,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       printf("TTL : %d\n", (ip_layer->ip_ttl)); //ntohs
 
       if (ip_layer->ip_ttl<TTL_THRESHOLD) {
-        printf("[TTL] Low TTL encountered.\n");
+        printf(RED "[TTL] Low TTL encountered.\n" RESET);
       }
 
       /* Now that we know where the IP header is, we can
@@ -225,7 +233,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
         printf("udp length : %d\n", ntohs(udp));
 
         if (udp_length > total_length ){
-          printf("/!\\ OVERLAPPING FRAGLENT /!\\\n");
+          printf(RED "/!\\ OVERLAPPING FRAGLENT /!\\\n" RESET);
         }
 
       }
@@ -248,7 +256,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       printf("acknowledge number: %u\n", ack);
 
       if (count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
-       {printf("/!\\ TCP retransmission /!\\\n");}
+       {printf(RED "/!\\ TCP retransmission /!\\\n" RESET);}
 
       if (count == 1 ) {
         sequenceprev = sequence;
