@@ -23,13 +23,8 @@
 #define D_HOST_MAC_ADDR 6
 #define MAX_STRING_LEN 4
 #define TTL_THRESHOLD 10 // 0 <= TTL <= 255
-#define RED   "\x1B[31m"
-#define GRN   "\x1B[32m"
-#define YEL   "\x1B[33m"
-#define BLU   "\x1B[34m"
-#define MAG   "\x1B[35m"
-#define CYN   "\x1B[36m"
-#define WHT   "\x1B[37m"
+#define RED   "\033[1m\033[31m"
+#define GRN   "\033[1m\033[32m"
 #define RESET "\x1B[0m"
 
 bool loop_local_capt = false; // define if there is linux cooked capture or not for the ethernet layer.
