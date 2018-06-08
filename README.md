@@ -39,7 +39,7 @@ The [sample pcap file](https://github.com/CedricOL07/pcap_tcp_analyser/blob/mast
 
 #### <a name="arp-spoofing"></a>ARP Spoofing
 
-ARP Spoofing consists in acting fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attack can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
+ARP Spoofing consists in fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attack can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
 
 This can allow the attack to proceed to attack the victim in many ways: man-in-the-midde, DoS, black-hole, ...
 * MitM: the attacker redirects the traffic from the victim to the real *default gateway* and vice-versa. That way it can sniff the victim's traffic. It can also modify the packets (active man-in-the-middle).
