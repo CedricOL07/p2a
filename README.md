@@ -5,7 +5,9 @@ This project aims at building an easy-to-use tool that will parse a `pcap` file 
 __Outline:__
 * [Documentation](#documentation)
   * [Launching our script](#launch)
-  * [TTL Expiry Attack](#ttl)
+  * [Anomalies](#anomalies)
+    * [TTL Expiry Attack](#ttl)
+    * [ARP Spoofing](#arp-spoofing)
 * [Contributors](#Contributors)
 * [References and external documentation](#references)
 
@@ -16,12 +18,12 @@ __Outline:__
 ```sh
 make
 
-./main.out ./pcap_files/some_pcap_file.pcapng
+./pacapp ./pcap_files/some_pcap_file.pcapng
 ```
 
-> We purposely name our executables as `.out` files so that we do not push them onto GitHub thanks to the `.gitignore`.
+### <a name="anomalies"></a>Anomalies
 
-### <a name="ttl"></a>TTL Expiry Attack
+#### <a name="ttl"></a>TTL Expiry Attack
 
 The **Time To Live** (TTL) field for an IP packet corresponds to how long is that packet 'allowed' to travel around the network before being dropped by routers. It is a 8-bit value that is usually reduced by one on every hop.
 
@@ -35,7 +37,26 @@ In `utils.c`, we defined a `TTL_THRESHOLD` (=10 for now). If the TTL for a packe
 
 The [sample pcap file](https://github.com/CedricOL07/pcap_tcp_analyser/blob/master/pcap_files/low_ttl_sample.pcapng) (containing a packet with a low TTL) was captured using the scripts located in the [low_ttl directory](https://github.com/CedricOL07/pcap_tcp_analyser/tree/master/low_ttl).
 
+#### <a name="arp-spoofing"></a>ARP Spoofing
+
+ARP Spoofing consists in acting fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attack can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
+
+This can allow the attack to proceed to attack the victim in many ways: man-in-the-midde, DoS, black-hole, ...
+* MitM: the attacker redirects the traffic from the victim to the real *default gateway* and vice-versa. That way it can sniff the victim's traffic. It can also modify the packets (active man-in-the-middle).
+* Black-hole: the attacker does not process the packets it gets from the victim: the victim cannot connect to the Internet anymore.
+
+**Example:**
+
+The victim's IP address is `192.168.10.2` and the *default gateway* is at `192.168.1.1`:
+
+```sh
+sudo arpspoofing -i wlan0 -t 192.168.10.2 192.169.1.1
+```
+
+The attacker will keep on sending the victim ARP packets telling that `192.168.1.1` is at the attacker's MAC address. That way the victim will send its packets (aiming for the Internet) to the attacker, who does not redirect them (`-r` option to redirect them).
+
 ## <a name="Contributors"></a>Contributors
+
 * [Cedric Olivero](https://github.com/CedricOL07)
 * [JB Durville](https://github.com/jbdrvl)
 

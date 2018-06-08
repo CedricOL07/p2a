@@ -10,4 +10,4 @@ all: main
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 main: $(OBJ)
-	$(CC) $(CFLAGS) -o main.out $^ $(LIBS)
+	$(CC) $(CFLAGS) -o pacapp $^ $(LIBS)
