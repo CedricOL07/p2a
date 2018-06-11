@@ -18,6 +18,8 @@ __Outline:__
 * [Cedric Olivero](https://github.com/CedricOL07)
 * [JB Durville](https://github.com/jbdrvl)
 
+> Contributing: any comment/idea/contribution is welcome.
+
 ## <a name="documentation"></a>Documentation
 
 ### <a name="launch"></a>Launching our script
