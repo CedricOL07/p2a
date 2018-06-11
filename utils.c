@@ -29,16 +29,19 @@
 
 bool loop_local_capt = false; // define if there is linux cooked capture or not for the ethernet layer.
 bool verbose = false;// mode verbose unabled by default
+int errors=0; // nbr of errors for a given packet, global so that we can use it in check_host()
 
 int help() {
   printf("Usage: ./pacapp [-l] ./pcap_file.pcapng\n");
   printf("\t-l: if the capture is a Linux Cooked Capture\n");
   printf("\t-h: display this help message\n");
+  printf("\t-v: verbose option\n");
   return 1;
 }
 
 void activate_verbose(){
   verbose = true;
+  printf(GRN "Verbose option: ON\n" RESET);
 }
 /*
 * Name : activate_linux_cooked
@@ -47,7 +50,43 @@ void activate_verbose(){
 */
 void activate_linux_cooked() {
   loop_local_capt = true;
+  printf(GRN "Linux Cooked Capture: ON\n" RESET);
 }
+
+ /*
+ * Name : check_host
+ * function :  for a given host (MAC and IP addresses), checks whether one of the address was already
+ *             entered in the MAC/IP linked list:
+ *             - if MAC and IP are already present, skip
+ *             - if only MAC matches an entry (but different IP), then raise flag
+ *             - if only IP matches an entry (but different MAC), then raise flag
+ *
+ */
+int check_host(struct Node *n, char mac[20], char ip[20]) {
+  int ret=0;
+  while (n != NULL) {
+     if (strcmp(n->ip, ip)==0 && strcmp(n->mac, mac)==0) {
+       ret++;
+     } else if (strcmp(n->mac, mac)==0 && strcmp(n->ip, ip)!=0) {
+       printf(RED "/!\\ MAC address associated to different IP's /!\\\n" RESET);
+       errors++;
+       if (verbose) {
+         printf(RED "\t%s <---> %s\n" RESET, mac, n->ip);
+         printf(RED "\t%s <---> %s\n" RESET, mac, ip);
+       }
+     } else if (strcmp(n->ip, ip)==0 && strcmp(n->mac, mac)!=0 && strcmp(ip, "127.0.0.1")!=0) {
+       printf(RED "/!\\ IP address associated to different MAC's /!\\\n" RESET);
+       errors++;
+       if (verbose) {
+         printf(RED "\t%s <---> %s\n" RESET, ip, n->mac);
+         printf(RED "\t%s <---> %s\n" RESET, ip, mac);
+       }
+     }
+     n = n->previous;
+  }
+  return ret;
+}
+
 
 /*
 * Name : my_packet_handler
@@ -65,7 +104,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       static int src_port_prev = 1;
       static int dest_port_prev = 1;
       static int flags_prev = 1;
-      typedef uint32_t tcp_seq; // define th_seq and th_ack in sniff_ip
+      //typedef uint32_t tcp_seq; // define th_seq and th_ack in sniff_ip
       /*Pointers to initialze the structures*/
       const struct ether_header *eth_header;
       const struct sniff_ethernet *ethernet;
@@ -77,26 +116,46 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       /*variables indicating the length of a packet part*/
       int ethernet_header_length;
       int ip_header_length;
+      /* UDP packet variables */
+      int total_length, udp, udp_length;
+      /* TCP packet variables */
+      int sequence, ack, src_port, dest_port, flags;
+      /* initiate new nodes and arrays for MAC/IP linked list */
+      struct Node* new_node_dst = NULL;
+      struct Node* new_node_src = NULL;
+      static struct Node* previous_node = NULL;
+      char mac_src[20], mac_dst[20];
+      char ip_src[20], ip_dst[20];
 
-      count++;
-      printf("\nPacket number %d:\n", count);
+      errors=0; // nbr of errors per packet
+      int packet_nbr = count++;
+      if (packet_nbr==1) {printf("\n");} // just a display preference
 
-      if (loop_local_capt == true){eth_header = (struct ether_header *) (packet + 2);} // add 2 byte in the packet because we work with  linux cooked capture
-      else {eth_header = (struct ether_header *) (packet);}
+      if (loop_local_capt == true) {
+        eth_header = (struct ether_header *) (packet + 2); // add 2 bytes in the packet because of linux cooked capture
+      } else {
+        eth_header = (struct ether_header *) (packet);
+      }
+
       ethernet = (struct sniff_ethernet*)(packet);
 
-      printf("Source MAC address is : %s\n", ether_ntoa(&ethernet->ether_shost));
-      printf("Destination MAC address is : %s\n", ether_ntoa(&ethernet->ether_dhost));
+      // recover the MAC addresses
+      ether_ntoa_r(&ethernet->ether_shost, &mac_src);
+      ether_ntoa_r(&ethernet->ether_dhost, &mac_dst);
 
+      /*if (ntohs(eth_header->ether_type)==ETHERTYPE_ARP) {
+        printf(GRN "ARP\n" RESET);
+      }*/
 
       if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
-          printf("Not an IP packet. Skipping...\n\n");
           return;
       }
 
       /* Header lengths in bytes */
-      if (loop_local_capt == 1){ethernet_header_length = 16;} /* Doesn't change */// add 2 byte in the packet because we work with  linux cooked capture
-      else {ethernet_header_length = 14; }
+      ethernet_header_length = 14;
+      if (loop_local_capt == 1) {
+        ethernet_header_length+= 2;  // add 2 bytes in the packet because of linux cooked capture
+      }
 
       /* Find start of IP header */
       ip_header = packet + ethernet_header_length;
@@ -105,14 +164,21 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       ip_header_length = ((*ip_header) & 0x0F);
       /* The IHL is number of 32-bit segments. Multiply
          by four to get a byte count for pointer arithmetic */
-      ip_header_length = ip_header_length * 4;
-
+      ip_header_length *= 4;
       ip_layer = (struct ip_layer*)(ip_header);
-      printf("TTL : %d\n", (ip_layer->ip_ttl)); //ntohs
 
+      // check if the TTL is not too low
       if (ip_layer->ip_ttl<TTL_THRESHOLD) {
-        printf(RED "[TTL] Low TTL encountered.\n" RESET);
+        printf(RED "/!\\ Low TTL encountered./!\\\n" RESET);
+        errors++;
+        if (verbose) {
+          printf(RED "\tTTL = %d\n" RESET, (ip_layer->ip_ttl));
+        }
       }
+
+      // recover IP addresses
+      snprintf(ip_src, 20, "%s", inet_ntoa(ip_layer->ip_src));
+      snprintf(ip_dst, 20, "%s", inet_ntoa(ip_layer->ip_dst));
 
       /* Now that we know where the IP header is, we can
          inspect the IP header for a protocol number to
@@ -121,85 +187,125 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       u_char protocol = *(ip_header + 9);
 
       if (protocol != IPPROTO_TCP && protocol != IPPROTO_UDP) {
-          printf("Not a TCP or UDP packet. Skipping...\n\n");
-          return;
-      }
-      else if(protocol == IPPROTO_UDP && protocol != IPPROTO_TCP){
-        printf("It is a UDP packet\n");
-        printf("Total length : %d\n", ntohs(ip_layer->ip_len));
-        int total_length = ntohs(ip_layer->ip_len);
-        int udp =  *(int *)(udp_header + 4);// showing the length of udp packet and add 4 to place the pointer at "the length of the packet"
-        int udp_length = ntohs(udp);
-        /* Find start of UDP header */
+        return;
+      } else if(protocol == IPPROTO_UDP){
+        // UDP PACKET
+        total_length = ntohs(ip_layer->ip_len);
         udp_header = packet + ethernet_header_length + ip_header_length;
-        printf("udp length : %d\n", ntohs(udp));
-
+        udp =  *(int *)(udp_header + 4);// showing the length of udp packet and add 4 to place the pointer at "the length of the packet"
+        udp_length = ntohs(udp);
         if (udp_length > total_length ){
-          printf(RED "/!\\ OVERLAPPING FRAGLENT /!\\\n" RESET);
+          printf(RED "/!\\ OVERLAPPING FRAGMENT /!\\\n" RESET);
+          errors++;
+          if (verbose) {
+            printf(RED "\tUDP Length: %d\n\tTotal Length: %d\n" RESET, ntohs(udp), ntohs(ip_layer->ip_len));
+          }
+        }
+      } else {
+        // TCP PACKET
+        tcp_header = packet + ethernet_header_length + ip_header_length; // Find start of TCP header
+        tcp =  (struct tcp*)(tcp_header);// move to the tcp layer  and we can get the informations
+
+        sequence = ntohl(tcp->th_seq);
+        ack = ntohl(tcp->th_ack);
+        src_port = ntohs(tcp->th_sport);
+        dest_port = ntohs(tcp->th_dport);
+        flags = tcp->th_flags;
+
+        if (count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
+        {
+           printf(RED "/!\\ TCP retransmission /!\\\n" RESET);
+           errors++;
+           if (verbose) {
+             printf(RED "For this packet and the previous one:\n\tSeq: %u\n\tAck: %u\n" RESET, sequence, ack);
+           }
         }
 
-      }
-      else { printf("It is a TCP packet\n");
-
-      /* Find start of TCP header */
-      tcp_header = packet + ethernet_header_length + ip_header_length;
-      tcp =  (struct tcp*)(tcp_header);// move to the tcp layer  and we can get the informations
-
-      int sequence = ntohl(tcp->th_seq);
-      int ack = ntohl(tcp->th_ack);
-      int src_port = ntohs(tcp->th_sport);
-      int dest_port = ntohs(tcp->th_dport);
-      int flags = tcp->th_flags;
-
-      printf("Src port: %u\n", src_port);
-      printf("Dst port: %u\n", dest_port);
-
-      printf("sequence number: %u\n", sequence);
-      printf("acknowledge number: %u\n", ack);
-
-      if (count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
-       {printf(RED "/!\\ TCP retransmission /!\\\n" RESET);}
-
-      if (count == 1 ) {
-        sequenceprev = sequence;
-        ackprev = ack;
-        src_port_prev = src_port;
-        dest_port_prev = dest_port;
-        flags_prev = flags;
-
-      }
-
-      switch (tcp->th_flags) {
-        case TH_SYN:
-          printf("Flag: TH_SYN\n");
-          break;
-        case TH_PHACK:
-          printf("Flag: TH_PHACK\n");
-          break;
-        case TH_ACK:
-          printf("Flag: TH_ACK\n");
-          break;
-        case TH_RST:
-          printf("Flag: TH_RST\n");
-          break;
-        case TH_SYNACK:
-          printf("Flag: TH_SYNACK\n");
-          break;
-        case TH_RSTACK:
-          printf("Flag: TH_RSTACK\n");
-          break;
-        case TH_FIN:
-          printf("Flag: TH_FIN\n");
-          break;
+        if (count == 1 ) {
+          sequenceprev = sequence;
+          ackprev = ack;
+          src_port_prev = src_port;
+          dest_port_prev = dest_port;
+          flags_prev = flags;
+        }
+        /*
+        switch (tcp->th_flags) {
+          case TH_SYN:
+            printf("Flag: TH_SYN\n");
+            break;
+          case TH_PHACK:
+            printf("Flag: TH_PHACK\n");
+            break;
+          case TH_ACK:
+            printf("Flag: TH_ACK\n");
+            break;
+          case TH_RST:
+            printf("Flag: TH_RST\n");
+            break;
+          case TH_SYNACK:
+            printf("Flag: TH_SYNACK\n");
+            break;
+          case TH_RSTACK:
+            printf("Flag: TH_RSTACK\n");
+            break;
+          case TH_FIN:
+            printf("Flag: TH_FIN\n");
+            break;
+        }
+        */
+        if (count > 1 ) {
+          sequenceprev = sequence;
+          ackprev = ack;
+          src_port_prev = src_port;
+          dest_port_prev = dest_port;
+          flags_prev = flags;
+        }
       }
 
-      if (count > 1 ) {
-        sequenceprev = sequence;
-        ackprev = ack;
-        src_port_prev = src_port;
-        dest_port_prev = dest_port;
-        flags_prev = flags;
+      // initiate MAC/IP linked list with first source MAC/IP addresses
+      if (count==2) {
+        new_node_src = (struct Node*)malloc(sizeof(struct Node)); // allocate node in the heap
+        strcpy(new_node_src->mac, mac_src);
+        strcpy(new_node_src->ip, ip_src);
+        new_node_src->previous = NULL;
       }
-    }
 
+      // check SRC addresses (MAC & IP)
+      if (check_host(previous_node, mac_src, ip_src)==0) {
+        // enter MAC_DST and IP_DST in the MAC/IP linked list
+        new_node_src = (struct Node*)malloc(sizeof(struct Node)); // allocate node in the heap
+        strcpy(new_node_src->mac, mac_src);
+        strcpy(new_node_src->ip, ip_src);
+        new_node_src->previous = previous_node;
+        previous_node = new_node_src;
+      }
+
+      // check DST addresses (MAC & IP)
+      if (check_host(previous_node, mac_dst, ip_dst)==0) {
+        // enter MAC_SRC and IP_SRC in the MAC/IP linked list
+        new_node_dst = (struct Node*)malloc(sizeof(struct Node)); // allocate node in the heap
+        strcpy(new_node_dst->mac, mac_dst);
+        strcpy(new_node_dst->ip, ip_dst);
+        new_node_dst->previous = previous_node;
+        previous_node = new_node_dst;
+      }
+
+      // print results if errors were found in packet
+      if (errors>0) {
+        printf("Packet number: %d\n", packet_nbr);
+        if (verbose) {
+          printf("MAC src: %s\n", mac_src);
+          printf("MAC dst: %s\n", mac_dst);
+          printf("IP src: %s\n", ip_src);
+          printf("IP dst: %s\n", ip_dst);
+          if (protocol == IPPROTO_TCP) {
+            printf("Protocol: TCP\n");
+            printf("Src port: %u\n", src_port);
+            printf("Dst port: %u\n", dest_port);
+          } else if (protocol == IPPROTO_UDP) {
+            printf("Protocol: UDP\n");
+          }
+        }
+        printf("\n");
+      }
 }

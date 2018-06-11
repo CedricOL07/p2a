@@ -24,12 +24,10 @@ int main(int argc, char **argv)
          return help();
       }
       if (strcmp("-v", argv[i]) == 0) {
-         printf("Verbose on.\n");
          activate_verbose();
          continue;
       }
       if (strcmp("-l", argv[i]) == 0) {
-         printf("Linux Cooked Capture: ON\n");
          activate_linux_cooked();
          continue;
       }

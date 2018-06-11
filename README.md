@@ -16,9 +16,19 @@ __Outline:__
 ### <a name="launch"></a>Launching our script
 
 ```sh
-make
+make all
 
-./p2a ./pcap_files/some_pcap_file.pcapng
+./p2a -v ./pcap_files/some_pcap_file.pcap
+```
+
+#### Usage
+
+```
+$ ./p2a -h
+Usage: ./pacapp [-l] ./pcap_file.pcapng
+	-l: if the capture is a Linux Cooked Capture
+	-h: display this help message
+	-v: verbose option
 ```
 
 ### <a name="anomalies"></a>Anomalies

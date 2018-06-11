@@ -1,3 +1,9 @@
+# PCAP Files
+
+These PCAP files are here to test `p2a`. Some of them are ours and some are not:
+* `arppoison.pcap` and `tcp_retransmissions.pcap` from [Chris Sanders](http://chrissanders.org/captures/)
+* `teardrop.cap` from [Wireshark sample captures](https://wiki.wireshark.org/SampleCaptures)
+
 ## More `pcap` files
 
 * https://www.cloudshark.org/

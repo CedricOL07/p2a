@@ -1,7 +1,7 @@
-#include <netinet/in.h>
-
 #ifndef UTILS_H
 #define UTILS_H
+
+#include <netinet/in.h>
 
 #define D_HOST_MAC_ADDR 6
 
@@ -9,6 +9,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 int help();
 void activate_verbose();
 void activate_linux_cooked();
+//void display_nodes(struct Node *n);
 
 /* Ethernet header */
 struct sniff_ethernet {
@@ -34,11 +35,12 @@ struct sniff_ip {
         u_short ip_sum;                 /* checksum */
         struct  in_addr ip_src,ip_dst;  /* source and dest address */
 };
+
 #define IP_HL(ip)               (((ip)->ip_vhl) & 0x0f)
 #define IP_V(ip)                (((ip)->ip_vhl) >> 4)
 
-
 typedef uint32_t tcp_seq;
+
 struct sniff_tcp {
   u_short th_sport;	/* source port */
   u_short th_dport;	/* destination port */
@@ -62,6 +64,13 @@ struct sniff_tcp {
   u_short th_win;		/* window */
   u_short th_sum;		/* checksum */
   u_short th_urp;		/* urgent pointer */
+};
+
+struct Node
+{
+  char mac[20];
+  char ip[20];
+  struct Node *previous;
 };
 
 #endif
