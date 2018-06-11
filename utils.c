@@ -221,13 +221,6 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
            }
         }
 
-        if (count == 1 ) {
-          sequenceprev = sequence;
-          ackprev = ack;
-          src_port_prev = src_port;
-          dest_port_prev = dest_port;
-          flags_prev = flags;
-        }
         /*
         switch (tcp->th_flags) {
           case TH_SYN:
@@ -253,13 +246,11 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
             break;
         }
         */
-        if (count > 1 ) {
           sequenceprev = sequence;
           ackprev = ack;
           src_port_prev = src_port;
           dest_port_prev = dest_port;
           flags_prev = flags;
-        }
       }
 
       // initiate MAC/IP linked list with first source MAC/IP addresses

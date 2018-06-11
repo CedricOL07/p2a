@@ -76,11 +76,18 @@ The attacker will keep on sending the victim ARP packets telling that `192.168.1
 
 ### <a name="tcp-retransmission"></a>3 - TCP Retransmission
 
-__TODO__
+Each byte of data sent in a TCP connection has an associated sequence number. This is indicated on the sequence number field of the TCP header.
+
+When the receiving socket detects an incoming segment of data, it uses the acknowledgement number in the TCP header to indicate receipt. After sending a packet of data, the sender will start a retransmission timer of variable length. If it does not receive an acknowledgment before the timer expires, the sender will assume the segment has been lost and will retransmit it.
+
+We can see TCP retransmission when the previous packet owns the same acknowledgment, sequence, source port, destination port of the current packet.
 
 ### <a name="overlapping-fragments"></a>4 - Overlapping Fragments
 
-__TODO__
+The IP fragment overlapped exploit occurs when two fragments contained within the same IP packet have offsets that indicate that they overlap each other in positioning within the packet. This could mean that either fragment A is being completely overwritten by fragment B, or that fragment A is partially being overwritten by fragment B. Some operating systems do not properly handle fragments that overlap in this manner and may throw exceptions or behave in other undesirable ways upon receipt of overlapping fragments. This is the basis for the teardrop attack. Overlapping fragments may also be used in an attempt to bypass Intrusion Detection Systems. In this exploit, part of an attack is sent in fragments along with additional random data; future fragments may overwrite the random data with the remainder of the attack. If the completed packet is not properly reassembled at the IDS, the attack will go undetected.
+
+Teardrop attack :
+A teardrop attack involves sending mangled IP fragments with overlapping, oversized payloads to the target machine.
 
 ## <a name="references"></a>References and external documentation
 
@@ -99,3 +106,11 @@ __TODO__
 ### TTL Expiry Attack
 * [TTL - Wikipedia](https://en.wikipedia.org/wiki/Time_to_live)
 * [TTL Expiry Attack Identification and Mitigation - CISCO](https://www.cisco.com/c/en/us/about/security-center/ttl-expiry-attack.html)
+
+### TCP Retransmission
+
+* [TCP - Retransmission](https://www.performancevision.com/blog/network-packet-loss-retransmissions-and-duplicate-acknowledgements/)
+
+### Teardrop
+* [IP fragment overlapped- Wikipedia](https://en.wikipedia.org/wiki/IP_fragmentation_attack)
+* [Tear Drop Attack - Wikipedia](https://en.wikipedia.org/wiki/Denial-of-service_attack#Teardrop_attacks)
