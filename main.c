@@ -31,6 +31,10 @@ int main(int argc, char **argv)
          activate_linux_cooked();
          continue;
       }
+      if (strcmp("--exlude-retransmissions", argv[i]) == 0) {
+         exclude_tcp_retransmissions();
+         continue;
+      }
       //const char *filename = "/tmp/myfile";
       if (access(argv[i], F_OK)==0) {
         arg_nbr=i;

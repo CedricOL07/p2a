@@ -29,6 +29,7 @@
 
 bool loop_local_capt = false; // define if there is linux cooked capture or not for the ethernet layer.
 bool verbose = false;// mode verbose unabled by default
+bool exclude_retransmissions = false; // exclude "TCP Retransmissions" errors
 int errors=0; // nbr of errors for a given packet, global so that we can use it in check_host()
 
 int help() {
@@ -39,14 +40,27 @@ int help() {
   return 1;
 }
 
+/*
+* Name : activate_verbose
+* function :  set the variable verbose to true
+*/
+void exclude_tcp_retransmissions(){
+  exclude_retransmissions = true;
+  printf(GRN "Exclude TCP Retransmissions: ON\n" RESET);
+}
+
+/*
+* Name : activate_verbose
+* function :  set the variable verbose to true
+*/
 void activate_verbose(){
   verbose = true;
   printf(GRN "Verbose option: ON\n" RESET);
 }
+
 /*
 * Name : activate_linux_cooked
-* function :  asks the user if the capture was done on local loop (127.0.0.1)
-*             and sets up the loop_local_capt variable accordingly
+* function :  set the variable loop_local_capt to true
 */
 void activate_linux_cooked() {
   loop_local_capt = true;
@@ -67,13 +81,13 @@ int check_host(struct Node *n, char mac[20], char ip[20]) {
   while (n != NULL) {
      if (strcmp(n->ip, ip)==0 && strcmp(n->mac, mac)==0) {
        ret++;
-     } else if (strcmp(n->mac, mac)==0 && strcmp(n->ip, ip)!=0) {
+     /*} else if (strcmp(n->mac, mac)==0 && strcmp(n->ip, ip)!=0) {
        printf(RED "/!\\ MAC address associated to different IP's /!\\\n" RESET);
        errors++;
        if (verbose) {
          printf(RED "\t%s <---> %s\n" RESET, mac, n->ip);
          printf(RED "\t%s <---> %s\n" RESET, mac, ip);
-       }
+       }*/
      } else if (strcmp(n->ip, ip)==0 && strcmp(n->mac, mac)!=0 && strcmp(ip, "127.0.0.1")!=0) {
        printf(RED "/!\\ IP address associated to different MAC's /!\\\n" RESET);
        errors++;
@@ -167,14 +181,6 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       ip_header_length *= 4;
       ip_layer = (struct ip_layer*)(ip_header);
 
-      // check if the TTL is not too low
-      if (ip_layer->ip_ttl<TTL_THRESHOLD) {
-        printf(RED "/!\\ Low TTL encountered./!\\\n" RESET);
-        errors++;
-        if (verbose) {
-          printf(RED "\tTTL = %d\n" RESET, (ip_layer->ip_ttl));
-        }
-      }
 
       // recover IP addresses
       snprintf(ip_src, 20, "%s", inet_ntoa(ip_layer->ip_src));
@@ -185,6 +191,18 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
          make sure it is TCP before going any further.
          Protocol is always the 10th byte of the IP header */
       u_char protocol = *(ip_header + 9);
+
+      // check if the TTL is not too low
+      if (ip_layer->ip_ttl<TTL_THRESHOLD && (protocol==IPPROTO_TCP || protocol==IPPROTO_UDP)) {
+        printf(RED "/!\\ Low TTL encountered./!\\\n" RESET);
+        // TODO - do not print this if SSDP inside UDP (TTL values usually equal to 1 or 2)
+        errors++;
+        if (verbose) {
+          printf(RED "\tTTL = %d\n" RESET, (ip_layer->ip_ttl));
+          printf("Errors: %d\n", errors);
+          printf("Packet nbr: %d\n", packet_nbr);
+        }
+      }
 
       if (protocol != IPPROTO_TCP && protocol != IPPROTO_UDP) {
         return;
@@ -212,7 +230,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
         dest_port = ntohs(tcp->th_dport);
         flags = tcp->th_flags;
 
-        if (count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
+        if (!exclude_retransmissions && count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
         {
            printf(RED "/!\\ TCP Retransmission /!\\\n" RESET);
            errors++;
@@ -246,11 +264,11 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
             break;
         }
         */
-          sequenceprev = sequence;
-          ackprev = ack;
-          src_port_prev = src_port;
-          dest_port_prev = dest_port;
-          flags_prev = flags;
+        sequenceprev = sequence;
+        ackprev = ack;
+        src_port_prev = src_port;
+        dest_port_prev = dest_port;
+        flags_prev = flags;
       }
 
       // initiate MAC/IP linked list with first source MAC/IP addresses

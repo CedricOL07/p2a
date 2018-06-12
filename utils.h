@@ -9,6 +9,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
 int help();
 void activate_verbose();
 void activate_linux_cooked();
+void exclude_tcp_retransmissions();
 //void display_nodes(struct Node *n);
 
 /* Ethernet header */
