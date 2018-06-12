@@ -193,9 +193,10 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       u_char protocol = *(ip_header + 9);
 
       // check if the TTL is not too low
-      if (ip_layer->ip_ttl<TTL_THRESHOLD && (protocol==IPPROTO_TCP || protocol==IPPROTO_UDP)) {
+      if (ip_layer->ip_ttl<TTL_THRESHOLD && protocol==IPPROTO_TCP) {
         printf(RED "/!\\ Low TTL encountered./!\\\n" RESET);
         // TODO - do not print this if SSDP inside UDP (TTL values usually equal to 1 or 2)
+        // TODO - so we can study other UDP packets
         errors++;
         if (verbose) {
           printf(RED "\tTTL = %d\n" RESET, (ip_layer->ip_ttl));
