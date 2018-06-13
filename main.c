@@ -31,11 +31,6 @@ int main(int argc, char **argv)
          activate_linux_cooked();
          continue;
       }
-      if (strcmp("--exlude-retransmissions", argv[i]) == 0) {
-         exclude_tcp_retransmissions();
-         continue;
-      }
-      //const char *filename = "/tmp/myfile";
       if (access(argv[i], F_OK)==0) {
         arg_nbr=i;
         printf("Capture file: %s\n", argv[i]);
@@ -43,12 +38,7 @@ int main(int argc, char **argv)
       }
       return help();
   }
-  /*
-  if (check_local_capture()!=0) {
-    printf("[ERROR] An error occured while trying to understand if the capture was local or not.\n");
-    return 1;
-  }
-  */
+
   pcap_t *handle = pcap_open_offline(argv[arg_nbr], errbuf);// to retrieve a pcap file pass in argument
 
   if(handle == NULL){

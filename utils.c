@@ -28,25 +28,16 @@
 #define RESET "\x1B[0m"
 
 bool loop_local_capt = false; // define if there is linux cooked capture or not for the ethernet layer.
-bool verbose = false;// mode verbose unabled by default
-bool exclude_retransmissions = false; // exclude "TCP Retransmissions" errors
-int errors=0; // nbr of errors for a given packet, global so that we can use it in check_host()
+bool verbose = false;         // mode verbose unabled by default
+int errors=0;                 // nbr of errors for a given packet, global so that we can use it in check_host()
 
 int help() {
-  printf("Usage: ./pacapp [-l] ./pcap_file.pcapng\n");
+  printf("Usage: ./p2a [OPTIONS] FILE\n");
   printf("\t-l: if the capture is a Linux Cooked Capture\n");
   printf("\t-h: display this help message\n");
   printf("\t-v: verbose option\n");
+  printf("Example: ./p2a -v ./pcap_files/some_pcap_file.pcapng\n");
   return 1;
-}
-
-/*
-* Name : activate_verbose
-* function :  set the variable verbose to true
-*/
-void exclude_tcp_retransmissions(){
-  exclude_retransmissions = true;
-  printf(GRN "Exclude TCP Retransmissions: ON\n" RESET);
 }
 
 /*
@@ -81,13 +72,6 @@ int check_host(struct Node *n, char mac[20], char ip[20]) {
   while (n != NULL) {
      if (strcmp(n->ip, ip)==0 && strcmp(n->mac, mac)==0) {
        ret++;
-     /*} else if (strcmp(n->mac, mac)==0 && strcmp(n->ip, ip)!=0) {
-       printf(RED "/!\\ MAC address associated to different IP's /!\\\n" RESET);
-       errors++;
-       if (verbose) {
-         printf(RED "\t%s <---> %s\n" RESET, mac, n->ip);
-         printf(RED "\t%s <---> %s\n" RESET, mac, ip);
-       }*/
      } else if (strcmp(n->ip, ip)==0 && strcmp(n->mac, mac)!=0 && strcmp(ip, "127.0.0.1")!=0) {
        printf(RED "/!\\ IP address associated to different MAC's /!\\\n" RESET);
        errors++;
@@ -142,6 +126,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
       char ip_src[20], ip_dst[20];
 
       errors=0; // nbr of errors per packet
+      static int nbr_retransmissions = 0; // re-initialized everytime we encounter a packet different from the previous one
       int packet_nbr = count++;
       if (packet_nbr==1) {printf("\n");} // just a display preference
 
@@ -231,13 +216,18 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
         dest_port = ntohs(tcp->th_dport);
         flags = tcp->th_flags;
 
-        if (!exclude_retransmissions && count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
+        if (count > 1 && sequence == sequenceprev && ack == ackprev && src_port == src_port_prev && dest_port == dest_port_prev && flags == flags_prev)
         {
-           printf(RED "/!\\ TCP Retransmission /!\\\n" RESET);
-           errors++;
-           if (verbose) {
-             printf(RED "For this packet and the previous one:\n\tSeq: %u\n\tAck: %u\n" RESET, sequence, ack);
+           // RETRANSMISSION
+           if (++nbr_retransmissions>1) {
+             printf(RED "/!\\ TCP Retransmission /!\\\n" RESET);
+             errors++;
+             if (verbose) {
+               printf(RED "For this packet and the TWO previous one:\n\tSeq: %u\n\tAck: %u\n" RESET, sequence, ack);
+             }
            }
+        } else {
+          nbr_retransmissions=0; // packet is not a retransmission so re-initialize the static variable
         }
 
         /*

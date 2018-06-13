@@ -10,7 +10,6 @@ int help();
 void activate_verbose();
 void activate_linux_cooked();
 void exclude_tcp_retransmissions();
-//void display_nodes(struct Node *n);
 
 /* Ethernet header */
 struct sniff_ethernet {

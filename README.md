@@ -11,6 +11,7 @@ __Outline:__
     2. [ARP Spoofing](#arp-spoofing)
     3. [TCP Retransmission](#tcp-retransmission)
     4. [Overlapping Fragments](#overlapping-fragments)
+  * [Project directories](#dir)
 * [References and external documentation](#references)
 
 ## <a name="contributors"></a>Contributors
@@ -34,10 +35,11 @@ make all
 
 ```
 $ ./p2a -h
-Usage: ./pacapp [-l] ./pcap_file.pcapng
+Usage: ./p2a [OPTIONS] FILE
 	-l: if the capture is a Linux Cooked Capture
 	-h: display this help message
 	-v: verbose option
+Example: ./p2a -v ./pcap_files/some_pcap_file.pcapng
 ```
 
 ### <a name="anomalies"></a>Anomalies
@@ -51,6 +53,8 @@ According to [Cisco's page on the TTL Expiry Attack](https://www.cisco.com/c/en/
 > "When an IOS device receives a packet with a TTL value of less than or equal to one, an **ICMPv4 Type 11, Code 0** message is sent by an IOS device, resulting in a **corresponding impact on the CPU**.  This impact occurs because more CPU processing is required to respond (using TTL-exceeded packets) to packets with TTL values of less than one than to simply forward a packet with a TTL value greater than one."
 
 > "The TTL expiry behavior creates a **denial of service (DoS) attack vector** against network equipment. Network devices are purpose-built to forward ordinary packets as quickly as possible. When exception packets are encountered, such as those with expiring TTL values, varying amounts of effort are expended by a router to respond appropriately."
+
+__Analysis/Code:__
 
 In `utils.c`, we defined a `TTL_THRESHOLD` (=10 for now). If the TTL for a packet is lower than this value, a flag is raised to indicate that the TTL is low. If too many such flags are raised, it could be a TTL Expiry Attack.
 
@@ -74,20 +78,41 @@ sudo arpspoofing -i wlan0 -t 192.168.10.2 192.169.1.1
 
 The attacker will keep on sending the victim ARP packets telling that `192.168.1.1` is at the attacker's MAC address. That way the victim will send its packets (aiming for the Internet) to the attacker, who does not redirect them (`-r` option to redirect them).
 
-### <a name="tcp-retransmission"></a>3 - TCP Retransmission
+__Analysis/Code:__
 
-Each byte of data sent in a TCP connection has an associated sequence number. This is indicated on the sequence number field of the TCP header.
+For the analysis, since we are only looking at IP packets (for now), `p2a` saves in a *linked list* all pairs `(MAC address, IP address)` that it encounters. When checking a new given pair, it goes through the linked list and returns an error if the IP address is already associated to another MAC address.
 
-When the receiving socket detects an incoming segment of data, it uses the acknowledgement number in the TCP header to indicate receipt. After sending a packet of data, the sender will start a retransmission timer of variable length. If it does not receive an acknowledgment before the timer expires, the sender will assume the segment has been lost and will retransmit it.
+For the example above, our script would detect that `192.168.1.1` (*default gateway*) is associated to two different MAC addresses: the real one, until the attacker comes in and tell the victim that it is the *default gateway* and that its MAC address gets associated to the *default gateway* (from the victim's point of vue).
 
-We can see TCP retransmission when the previous packet owns the same acknowledgment, sequence, source port, destination port of the current packet.
+#### <a name="tcp-retransmission"></a>3 - TCP Retransmission
 
-### <a name="overlapping-fragments"></a>4 - Overlapping Fragments
+Each byte of data sent in a TCP connection has an associated *sequence number*. This is indicated on the sequence number field of the *TCP header*.
 
-The IP fragment overlapped exploit occurs when two fragments contained within the same IP packet have offsets that indicate that they overlap each other in positioning within the packet. This could mean that either fragment A is being completely overwritten by fragment B, or that fragment A is partially being overwritten by fragment B. Some operating systems do not properly handle fragments that overlap in this manner and may throw exceptions or behave in other undesirable ways upon receipt of overlapping fragments. This is the basis for the teardrop attack. Overlapping fragments may also be used in an attempt to bypass Intrusion Detection Systems. In this exploit, part of an attack is sent in fragments along with additional random data; future fragments may overwrite the random data with the remainder of the attack. If the completed packet is not properly reassembled at the IDS, the attack will go undetected.
+When the receiving socket detects an incoming segment of data, it uses the *acknowledgement number* in the TCP header to indicate receipt. After sending a packet of data, the sender will start a retransmission timer of variable length. If it does not receive an acknowledgment before the timer expires, the sender will assume the segment has been lost and will retransmit it.
 
-Teardrop attack :
-A teardrop attack involves sending mangled IP fragments with overlapping, oversized payloads to the target machine.
+We can see **TCP retransmission** when the previous packet owns the same acknowledgment, sequence, source port, destination port of the current packet.
+
+> TCP Retransmissions are quite common and can be totally normal (if one packet is retransmitted because it was legitimately lost), but can also be the sign of an issue on the network or on a communication.
+
+__Analysis/Code:__
+
+For our analysis on **TCP retransmissions**, we decided to only flag `TCP Retransmissions` errors when the packet is being retransmitted more than once.
+
+#### <a name="overlapping-fragments"></a>4 - Overlapping Fragments
+
+The **IP fragment overlapped** exploit occurs when two fragments contained within the *same IP packet* have offsets that indicate that they **overlap** each other in positioning within the packet. This could mean that either fragment A is being *completely* overwritten by fragment B, or that fragment A is *partially* being overwritten by fragment B. Some operating systems do not properly handle fragments that overlap in this manner and may throw exceptions or behave in other undesirable ways upon receipt of overlapping fragments. This is the basis for the **teardrop attack**.
+
+Overlapping fragments may also be used in an attempt to **bypass Intrusion Detection Systems**. In this exploit, part of an attack is sent in fragments along with additional random data; future fragments may overwrite the random data with the remainder of the attack. If the completed packet is not properly reassembled at the IDS, the attack will go undetected.
+
+> __Teardrop attack:__ involves sending mangled IP fragments with overlapping, oversized payloads to the target machine.
+
+### <a name="dir"></a>Project directories
+
+| Directory | Description/content  |
+| :------------- | :------------- |
+| `./attack_scripts` | Simple scripts to record some TCP ambiguities (Spoofing, low TTL) |
+| `./pcap_files` | PCAP files to test `p2a` |
+| `./tests_libpcap` | Two scripts to test and start using `libpcap` |
 
 ## <a name="references"></a>References and external documentation
 
