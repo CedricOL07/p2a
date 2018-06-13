@@ -8,7 +8,7 @@ __Outline:__
   * [Launching our script](#launch)
   * [Anomalies](#anomalies)
     1. [TTL Expiry Attack](#ttl)
-    2. [ARP Spoofing](#arp-spoofing)
+    2. [ARP Poisoning](#arp-poisoning)
     3. [TCP Retransmission](#tcp-retransmission)
     4. [Overlapping Fragments](#overlapping-fragments)
   * [Project directories](#dir)
@@ -60,9 +60,9 @@ In `utils.c`, we defined a `TTL_THRESHOLD` (=10 for now). If the TTL for a packe
 
 The [sample pcap file](https://github.com/CedricOL07/pcap_tcp_analyser/blob/master/pcap_files/low_ttl_sample.pcapng) (containing a packet with a low TTL) was captured using the scripts located in the `./attack_scripts/low_ttl` directory.
 
-#### <a name="arp-spoofing"></a>2 - ARP Spoofing
+#### <a name="arp-poisoning"></a>2 - ARP Poisoning
 
-ARP Spoofing consists in fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attacker can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
+ARP Poisoning consists in fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attacker can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
 
 This can allow the attacker to proceed and attack the victim in many ways: man-in-the-midde, DoS, black-hole, ...
 * MitM: the attacker redirects the traffic from the victim to the real *default gateway* and vice-versa. That way it can sniff the victim's traffic. It can also modify the packets (active man-in-the-middle).
