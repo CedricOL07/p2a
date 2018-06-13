@@ -223,7 +223,7 @@ void my_packet_handler(u_char *args,const struct pcap_pkthdr *header,const u_cha
              printf(RED "/!\\ TCP Retransmission /!\\\n" RESET);
              errors++;
              if (verbose) {
-               printf(RED "For this packet and the TWO previous one:\n\tSeq: %u\n\tAck: %u\n" RESET, sequence, ack);
+               printf(RED "For this packet and the TWO previous ones:\n\tSeq: %u\n\tAck: %u\n" RESET, sequence, ack);
              }
            }
         } else {

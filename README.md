@@ -62,9 +62,9 @@ The [sample pcap file](https://github.com/CedricOL07/pcap_tcp_analyser/blob/mast
 
 #### <a name="arp-spoofing"></a>2 - ARP Spoofing
 
-ARP Spoofing consists in fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attack can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
+ARP Spoofing consists in fooling a host in believing we are the *default gateway*. The victim regularly asks the *default gateway* its MAC address (ARP protocol). But an attacker can send the victim packets saying that the *default gateway* is at another MAC address (the attack's MAC address for example). The attacker just needs to send those packets "regularly enough" so that the victim "discards" the real messages from the *default gateway*.
 
-This can allow the attack to proceed to attack the victim in many ways: man-in-the-midde, DoS, black-hole, ...
+This can allow the attacker to proceed and attack the victim in many ways: man-in-the-midde, DoS, black-hole, ...
 * MitM: the attacker redirects the traffic from the victim to the real *default gateway* and vice-versa. That way it can sniff the victim's traffic. It can also modify the packets (active man-in-the-middle).
 * Black-hole: the attacker does not process the packets it gets from the victim: the victim cannot connect to the Internet anymore.
 
@@ -110,7 +110,7 @@ Overlapping fragments may also be used in an attempt to **bypass Intrusion Detec
 
 | Directory | Description/content  |
 | :------------- | :------------- |
-| `./attack_scripts` | Simple scripts to record some TCP ambiguities (Spoofing, low TTL) |
+| `./attack_scripts` | Simple scripts to test and record some TCP ambiguities (spoofing, low TTL) |
 | `./pcap_files` | PCAP files to test `p2a` |
 | `./tests_libpcap` | Two scripts to test and start using `libpcap` |
 
