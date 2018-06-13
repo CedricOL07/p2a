@@ -58,7 +58,7 @@ __Analysis/Code:__
 
 In `utils.c`, we defined a `TTL_THRESHOLD` (=10 for now). If the TTL for a packet is lower than this value, a flag is raised to indicate that the TTL is low. If too many such flags are raised, it could be a TTL Expiry Attack.
 
-The [sample pcap file](https://github.com/CedricOL07/pcap_tcp_analyser/blob/master/pcap_files/low_ttl_sample.pcapng) (containing a packet with a low TTL) was captured using the scripts located in the [low_ttl directory](https://github.com/CedricOL07/pcap_tcp_analyser/tree/master/low_ttl).
+The [sample pcap file](https://github.com/CedricOL07/pcap_tcp_analyser/blob/master/pcap_files/low_ttl_sample.pcapng) (containing a packet with a low TTL) was captured using the scripts located in the `./attack_scripts/low_ttl` directory.
 
 #### <a name="arp-spoofing"></a>2 - ARP Spoofing
 
