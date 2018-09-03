@@ -23,17 +23,13 @@
 
 #define MAX_STRING_LEN 4
 #define TTL_THRESHOLD 10      // 0 <= TTL <= 255
-/*#define RED   "\033[1m\033[31m"
-#define GRN   "\033[1m\033[32m"
-#define YLW   "\033[1m\033[33m"
-#define RESET "\x1B[0m"*/
 
 void add_packet_to_session(struct Session *s, struct TCP_Packet *new_packet, char mac_src[20], char mac_dst[20]);
 void print_session(struct Session *s);
 
-bool loop_local_capt = false; // DEPRECIATED - define if there is linux cooked capture or not for the ethernet layer.
-bool VERBOSE_ON = false;         // mode VERBOSE_ON unabled by default
-bool DEBUG_ON = false;           // mode debug unabled by default
+bool loop_local_capt = false;    // DEPRECIATED - define if there is linux cooked capture or not for the ethernet layer.
+bool VERBOSE_ON = false;         // mode verbose disabled by default
+bool DEBUG_ON = false;           // mode debug disabled by default
 bool EXCLUDE_RET = false;
 bool EXCLUDE_TTL = false;
 bool EXCLUDE_MAC = false;
@@ -44,10 +40,16 @@ int help() {
   // prints usage
   printf("Usage: ./p2a [OPTIONS] FILE\n");
   //printf("\t-l: if the capture is a Linux Cooked Capture\n");
-  printf("\t-h: display this help message\n");
-  printf("\t-v: verbose option\n");
-  printf("\t-d: debug option\n");
-  printf("Example: ./p2a -v ./pcap_files/some_pcap_file.pcapng\n");
+  printf("\t-h,--help:\t\tdisplay this help message\n");
+  printf("\t-v,--verbose:\t\tverbose option\n");
+  printf("\t-d,--debug:\t\tdebug option\n");
+  printf("\t-x,--exclude [OPTIONS]:\texclude some possible ambiguities from analysis\n");
+  printf("\t\t--exclude ret,mac,ttl\n");
+  printf("\t\t\tret: exclude retransmission analysis\n");
+  printf("\t\t\tmac: exclude MAC addresses analysis\n");
+  printf("\t\t\tttl: exclude TTL analysis\n");
+  printf("Examples:\n\t./p2a -v ./pcap_files/some_pcap_file.pcapng\n");
+  printf("\t./p2a --exclude mac,ttl --verbose my-pcap-file.pcap\n");
   return 1;
 }
 
