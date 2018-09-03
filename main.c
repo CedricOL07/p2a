@@ -3,49 +3,77 @@
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include <pcap.h>
 
 #include "utils.h"
 
-// MAIN
-int main(int argc, char **argv)
-{
-  int arg_nbr;
+int main(int argc, char **argv) {
+  int arg_nbr=-1;
+  int opt=0;
   fflush(stdin);
-  char errbuf[PCAP_ERRBUF_SIZE];// tell us if there is an error
-
+  char errbuf[PCAP_ERRBUF_SIZE];
   if (argc==1) {
     return help();
   }
-  /* iterate over all arguments */
-  for (int i = 1; i < argc; i++) {
-      if (strcmp("-h", argv[i]) == 0) {
-         return help();
-      }
-      if (strcmp("-v", argv[i]) == 0) {
-         activate_verbose();
-         continue;
-      }
-      if (strcmp("-l", argv[i]) == 0) {
-         activate_linux_cooked();
-         continue;
-      }
-      if (access(argv[i], F_OK)==0) {
-        arg_nbr=i;
-        printf("Capture file: %s\n", argv[i]);
-        continue;
-      }
+  static struct option long_options[] = {
+        {"help",          no_argument,       0, 'h'},
+        {"verbose",       no_argument,       0, 'v'},
+        {"debug",         no_argument,       0, 'd'},
+        {"linux-cooked",  no_argument,       0, 'l'},
+        {"exclude",       required_argument, 0, 'x'},
+        {0,               0,                 0,  0}
+  };
+  int long_index = 0;
+  while ((opt = getopt_long(argc, argv,"hvdlx", long_options, &long_index)) != -1) {
+    switch (opt) {
+      case 'h': help();
+        break;
+      case 'v': activate_verbose();
+        break;
+      case 'd': activate_debug();
+        break;
+      case 'l': activate_linux_cooked();
+        break;
+      case 'x':
+        if (optarg==NULL) {
+          exclude(argv[optind++]);
+        } else {
+          exclude(optarg);
+        }
+        break;
+      default: return help();
+    }
+  }
+  // check for leftover arguments (pcap file as well)
+  while (optind < argc) {
+    if (access(argv[optind], F_OK)==0 && arg_nbr==-1) {
+      arg_nbr=optind;
+      printf(GRN "[INFO]" RESET " Capture file: %s\n", argv[optind++]);
+    } else {
+      printf (RED "[ERROR]" RESET " Unexpected argument(s): ");
+      while (optind < argc) printf ("%s ", argv[optind++]);
+      putchar ('\n');
       return help();
+    }
+  }
+  // check if pcap file among arguments
+  if (arg_nbr==-1) {
+    printf(RED "[Error]" RESET " Missing capture file\n!");
+    return help();
   }
 
-  pcap_t *handle = pcap_open_offline(argv[arg_nbr], errbuf);// to retrieve a pcap file pass in argument
-
+  printf(GRN "[INFO]" RESET " Parsing pcap file...\n");
+  pcap_t *handle = pcap_open_offline(argv[arg_nbr], errbuf); // retrieve PCAP file passed as argument
   if(handle == NULL){
-    printf("[ERROR] %s\n", errbuf);
+    printf(RED "[ERROR]" RESET " %s\n", errbuf);
+    help();
+    exit(1);
   }
-  // allow to parse a pcap file, 0 show that unlimited loop, callback function, we don't have argument for the callbal function
-  pcap_loop(handle, 0, my_packet_handler, NULL);
+  pcap_loop(handle, 0, my_packet_handler, NULL); // int pcap_loop(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
+
+  analysis();
 
   return 0;
 }

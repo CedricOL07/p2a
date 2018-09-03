@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall
 DEPS = utils.h
-LIBS = -lpcap
+LIBS = -lpcap -lcrypto
 OBJ = main.o utils.o
 
 all: main
@@ -11,3 +11,6 @@ all: main
 
 main: $(OBJ)
 	$(CC) $(CFLAGS) -o p2a $^ $(LIBS)
+
+sha: sha.o
+	$(CC) $(CFLAGS) -o sha $^ $(LIBS)
