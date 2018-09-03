@@ -33,6 +33,7 @@ bool DEBUG_ON = false;           // mode debug disabled by default
 bool EXCLUDE_RET = false;
 bool EXCLUDE_TTL = false;
 bool EXCLUDE_MAC = false;
+bool SAVE_JSON = false;
 
 struct Session* previous_session = NULL;
 
@@ -43,13 +44,14 @@ int help() {
   printf("\t-h,--help:\t\tdisplay this help message\n");
   printf("\t-v,--verbose:\t\tverbose option\n");
   printf("\t-d,--debug:\t\tdebug option\n");
-  printf("\t-x,--exclude [OPTIONS]:\texclude some possible ambiguities from analysis\n");
+  printf("\t-x,--exclude OPTIONS:\texclude some possible ambiguities from analysis\n");
   printf("\t\t--exclude ret,mac,ttl\n");
   printf("\t\t\tret: exclude retransmission analysis\n");
   printf("\t\t\tmac: exclude MAC addresses analysis\n");
   printf("\t\t\tttl: exclude TTL analysis\n");
+  printf("\t-s,--save FILENAME:\tsaves results to file FILENAME\n\t\tJSON format - FILENAME should contain the JSON extension\n");
   printf("Examples:\n\t./p2a -v ./pcap_files/some_pcap_file.pcapng\n");
-  printf("\t./p2a --exclude mac,ttl --verbose my-pcap-file.pcap\n");
+  printf("\t./p2a --exclude mac,ttl --verbose my-pcap-file.pcap -s results.json\n");
   return 1;
 }
 
@@ -71,6 +73,11 @@ void activate_linux_cooked() {
   //printf(GRN "Linux Cooked Capture: ON\n" RESET);
   printf(RED "[ERROR] " RESET "Linux Cooked Captures not yet implemented. Working on it though!\n");
   exit(1);
+}
+
+void save_json(char* filename) {
+  SAVE_JSON = true;
+  printf(GRN "[INFO]" RESET " Saving results to JSON file %s\n", filename);
 }
 
 int nbr_digits(int a) {
@@ -375,23 +382,56 @@ void add_packet_to_session(struct Session *s, struct TCP_Packet *new_packet, cha
   }
 }
 
-void analysis() {
+void analysis(char* file_in, char* file_out) {
   /*
    * Once all packets have been parsed, this analyzes all of them to find ambiguities
    * TODO
    */
   if (DEBUG_ON) print_sessions(previous_session);
   printf(GRN "\n[INFO]" RESET " Launching analysis...\n");
+  FILE *fp;
   int counter_sessions=0;
-  int counter_mac_src, counter_mac_dst, counter_ttl;
+  int counter_mac_src, counter_mac_dst, counter_ttl, json_counter, low_ttl_counter;
   bool session_printed, packet_printed;
   bool ret_found, ttl_found; // ambiguities found for a given session
+  bool amb_found; // used for JSON
   struct MAC_address* m_src;
   struct MAC_address* m_dst;
   struct TTL* ttl;
   struct Session* s = previous_session;
   struct TCP_Packet *p, *p2;
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  if (SAVE_JSON) {
+    //printf("%s\n", file_out);
+    fp = fopen (file_out, "w+");
+    if (!fp) {  /* validate file is open, or throw error */
+      printf(RED "[ERROR]" RESET "Could not open JSON file for saving --> Not saving results.\n");
+      SAVE_JSON = false;
+    }
+  }
+  if (SAVE_JSON) {
+    fprintf(fp, "{\n");
+    fprintf(fp, "\t\"name\":\"%s\",\n", file_out);
+    fprintf(fp, "\t\"capture_file\":\"%s\",\n", file_in);
+    fprintf(fp, "\t\"timestamp\":\"%d-%02d-%02d %02d:%02d:%02d\",\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fprintf(fp, "\t\"sessions\":{\n");
+  }
   while (s != NULL) {
+    if (SAVE_JSON) {
+      fprintf(fp, "\t\t\"%d\":{\n", counter_sessions);
+      fprintf(fp, "\t\t\t\"source\":{");
+      fprintf(fp, "\"hash_id\":\"%s\",", s->hash_src);
+      fprintf(fp, "\"ip_addr\":\"%s\",", s->ip_src);
+      fprintf(fp, "\"port\":\"%d\"", s->port_src);
+      fprintf(fp, "},\n");
+      fprintf(fp, "\t\t\t\"destination\":{");
+      fprintf(fp, "\"hash_id\":\"%s\",", s->hash_dst);
+      fprintf(fp, "\"ip_addr\":\"%s\",", s->ip_dst);
+      fprintf(fp, "\"port\":\"%d\"", s->port_dst);
+      fprintf(fp, "},\n");
+      fprintf(fp, "\t\t\t\"ambiguities\":{");
+    }
     counter_sessions++;
     counter_mac_src = 0;
     counter_mac_dst = 0;
@@ -399,6 +439,7 @@ void analysis() {
     session_printed = false;
     ttl_found = false;
     ret_found = false;
+    amb_found = false;
     m_dst = s->last_mac_dst;
     m_src = s->last_mac_src;
     ttl = s->last_ttl;
@@ -421,6 +462,19 @@ void analysis() {
         session_printed=true;
       }
       m_dst = s->last_mac_dst;
+      if (SAVE_JSON) {
+        fprintf(fp, "\"MAC\":{");
+        fprintf(fp, "\"ip_addr\":\"%s\",", s->ip_dst);
+        json_counter=0;
+        while (m_dst!=NULL) {
+          fprintf(fp, "\"%d\":\"%s\"", json_counter++, m_dst->address);
+          if (m_dst->previous_mac!=NULL) fprintf(fp, ",");
+          m_dst = m_dst->previous_mac;
+        }
+        fprintf(fp, "}\n"); // closing "MAC"
+        amb_found = true;
+      }
+      m_dst = s->last_mac_dst;
       if (VERBOSE_ON) {
         printf(RED "\tMultiple MAC addresses associated to %s:\n" RESET, s->ip_dst);
         while (m_dst!=NULL) {
@@ -435,6 +489,20 @@ void analysis() {
       if (!session_printed) {
         print_session(s);
         session_printed=true;
+      }
+      m_src = s->last_mac_src;
+      if (SAVE_JSON) {
+        if (amb_found) fprintf(fp, ",\n");
+        fprintf(fp, "\"MAC\":{");
+        fprintf(fp, "\"ip_addr\":\"%s\",", s->ip_src);
+        json_counter=0;
+        while (m_src!=NULL) {
+          fprintf(fp, "\"%d\":\"%s\"", json_counter++, m_src->address);
+          if (m_dst->previous_mac!=NULL) fprintf(fp, ",");
+          m_src = m_src->previous_mac;
+        }
+        fprintf(fp, "}\n"); // closing "MAC"
+        amb_found = true;
       }
       m_src = s->last_mac_src;
       if (VERBOSE_ON) {
@@ -454,6 +522,19 @@ void analysis() {
         session_printed=true;
       }
       ttl = s->last_ttl;
+      if (SAVE_JSON) {
+        if (amb_found) fprintf(fp, ",\n");
+        fprintf(fp, "\"mult_TTL\":{");
+        json_counter=0;
+        while (ttl!=NULL) {
+          fprintf(fp, "\"%d\":\"%d\"", json_counter++, ttl->val);
+          if (ttl->previous_ttl!=NULL) fprintf(fp, ",");
+          ttl = ttl->previous_ttl;
+        }
+        fprintf(fp, "}\n"); // closing "mult_TTL"
+        amb_found = true;
+      }
+      ttl = s->last_ttl;
       if (VERBOSE_ON || DEBUG_ON) {
         printf(YLW "\tMultiple TTLs found in this session: " RESET);
         while (ttl!=NULL) {
@@ -467,12 +548,21 @@ void analysis() {
     }
     // Low TTL & retransmissions
     p = s->first_p;
+    low_ttl_counter=0;
+    json_counter=0;    // used to keep track of the number of TCP retransmissions
     while (p != NULL) {
       // Low TTL
       if (p->ttl < TTL_THRESHOLD && !EXCLUDE_TTL) {
         if (!session_printed) {
           print_session(s);
           session_printed=true;
+        }
+        if (SAVE_JSON) {
+          if (amb_found) fprintf(fp, ",\n");
+          fprintf(fp, "\"low_TTL_%d\":{", low_ttl_counter++);
+          fprintf(fp, "\"packet\":{\"number\":\"%d\", \"seq\":\"%ld\", \"ack\":\"%ld\", \"ttl\":\"%d\"}", p->number, p->seq, p->ack, p->ttl);
+          fprintf(fp, "}\n"); // closing "low_TTL_xxx"
+          amb_found = true;
         }
         if (VERBOSE_ON) {
           printf(RED "\tLow TTL encountered in Packet %d\n" RESET, p->number);
@@ -498,6 +588,14 @@ void analysis() {
                 session_printed=true;
               }
               if (!packet_printed) {
+                if (SAVE_JSON) {
+                  if (amb_found && json_counter==0) fprintf(fp, ",\n");
+                  if (json_counter!=0) fprintf(fp, ",\n");
+                  fprintf(fp, "\"TCP_retrans_%d\":{", json_counter++);
+                  fprintf(fp, "\"packet_%d\":{\"number\":\"%d\", \"seq\":\"%ld\", \"ack\":\"%ld\", \"length\":\"%d\",", p->number, p->number, p->seq, p->ack, p->len);
+                  print_flag_json(fp, p->flags);
+                  fprintf(fp, "}");
+                }
                 if (DEBUG_ON || VERBOSE_ON) {
                   printf(RED "\tTCP retransmission:\n" RESET);
                   printf("\tPacket %d\n\t\tSEQ = %ld | ACK = %ld\n\t\tLEN = %d\n\t", p->number, p->seq, p->ack, p->len);
@@ -510,18 +608,35 @@ void analysis() {
                 p->retransmitted=true;
               }
               if (VERBOSE_ON || DEBUG_ON) printf("\tPacket %d | LEN = %d\n", p2->number, p2->len);
+              if (SAVE_JSON) {
+                fprintf(fp, ",\"packet_%d\":{\"number\":\"%d\", \"seq\":\"%ld\", \"ack\":\"%ld\", \"length\":\"%d\",", p2->number, p2->number, p2->seq, p2->ack, p2->len);
+                print_flag_json(fp, p2->flags);
+                fprintf(fp, "}");
+              }
               p2->retransmitted=true;
             }
           }
           p2 = p2->next_p;
         }
+        if (SAVE_JSON && packet_printed) fprintf(fp, "}\n"); // closing "TCP_retrans_xxx"
       }
       p = p->next_p;
+    }
+    if (SAVE_JSON) {
+      fprintf(fp, "}\n"); // closing "ambiguities"
+      fprintf(fp, "\t\t}");
+      if (s->previous_s!=NULL) fprintf(fp, ",");
+      fprintf(fp, "\n");
     }
     s = s->previous_s;
   }
   if (!VERBOSE_ON) printf("\n");
   printf(GRN "\n[DONE]" RESET " Processed %d connection(s).\n", counter_sessions);
+  if (SAVE_JSON) {
+    fprintf(fp, "},\n\"nbr_sessions\":\"%d\"\n}\n", counter_sessions);
+    fclose(fp);
+    printf(GRN "[INFO]" RESET " Results saved to %s\n", file_out);
+  }
 }
 
 void print_session(struct Session *s) {
@@ -566,6 +681,40 @@ void print_flag(int flag) {
       break;
     default:
       printf(RED "\tUnknown Flag = %d\n" RESET "\t(-> Contribute to the project and add it in <utils.h>?)\n", flag);
+  }
+}
+
+void print_flag_json(FILE *fp, int flag) {
+  switch (flag) {
+    case TH_SYN:
+      fprintf(fp, "\"flag\":\"SYN\"");
+      break;
+    case TH_PHACK:
+      fprintf(fp, "\"flag\":\"PUSH-ACK\"");
+      break;
+    case TH_ACK:
+      fprintf(fp, "\"flag\":\"ACK\"");
+      break;
+    case TH_RST:
+      fprintf(fp, "\"flag\":\"RST\"");
+      break;
+    case TH_SYNACK:
+      fprintf(fp, "\"flag\":\"SYN-ACK\"");
+      break;
+    case TH_RSTACK:
+      fprintf(fp, "\"flag\":\"RST-ACK\"");
+      break;
+    case TH_FIN:
+      fprintf(fp, "\"flag\":\"FIN\"");
+      break;
+    case TH_FINACK:
+      fprintf(fp, "\"flag\":\"FIN-ACK\"");
+      break;
+    case TH_PHFINACK:
+      fprintf(fp, "\"flag\":\"PUSH-FIN-ACK\"");
+      break;
+    default:
+      fprintf(fp, "\"flag\":\"%d\"", flag);
   }
 }
 

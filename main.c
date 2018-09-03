@@ -11,6 +11,7 @@
 
 int main(int argc, char **argv) {
   int arg_nbr=-1;
+  char file_out[50];
   int opt=0;
   fflush(stdin);
   char errbuf[PCAP_ERRBUF_SIZE];
@@ -23,10 +24,12 @@ int main(int argc, char **argv) {
         {"debug",         no_argument,       0, 'd'},
         {"linux-cooked",  no_argument,       0, 'l'},
         {"exclude",       required_argument, 0, 'x'},
+        {"save",          required_argument, 0, 's'},
         {0,               0,                 0,  0}
+
   };
   int long_index = 0;
-  while ((opt = getopt_long(argc, argv,"hvdlx", long_options, &long_index)) != -1) {
+  while ((opt = getopt_long(argc, argv,"hvdlxs", long_options, &long_index)) != -1) {
     switch (opt) {
       case 'h': help();
         break;
@@ -42,6 +45,25 @@ int main(int argc, char **argv) {
         } else {
           exclude(optarg);
         }
+        break;
+      case 's':
+        if (optarg==NULL) {
+          printf("OPT: %d %s\n", optind, argv[optind]);
+          if (strlen(argv[optind])>45) {
+            printf(YLW "[ERROR]" RESET "Please choose a shorter filename where to save the results..\n");
+            exit(1);
+          }
+          strncpy(file_out, argv[optind], strlen(argv[optind]));
+          optind++;
+        } else {
+          printf("OPT: %d %s %ld\n", optind, optarg, strlen(optarg));
+          if (strlen(optarg)>45) {
+            printf(YLW "[ERROR]" RESET "Please choose a shorter filename where to save the results..\n");
+            exit(1);
+          }
+          strncpy(file_out, optarg, strlen(optarg));
+        }
+        save_json(file_out);
         break;
       default: return help();
     }
@@ -73,7 +95,7 @@ int main(int argc, char **argv) {
   }
   pcap_loop(handle, 0, my_packet_handler, NULL); // int pcap_loop(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 
-  analysis();
+  analysis(argv[arg_nbr], file_out);
 
   return 0;
 }

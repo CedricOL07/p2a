@@ -41,9 +41,11 @@ int help();
 void activate_verbose();
 void activate_debug();
 void activate_linux_cooked();
-void analysis();
+void analysis(char* file_in, char* file_out);
 void print_flag(int flag);
+void print_flag_json(FILE *fp, int flag);
 void exclude(char* excl);
+void save_json(char* filename);
 
 /* Ethernet header */
 struct sniff_ethernet {

@@ -29,7 +29,7 @@ __Outline:__
 ```sh
 make
 
-./p2a -v ./pcap_files/some_pcap_file.pcap
+./p2a -v ./pcap_files/some_pcap_file.pcap -s results.json
 ```
 
 #### Usage
@@ -40,16 +40,19 @@ Usage: ./p2a [OPTIONS] FILE
 	-h,--help:		display this help message
 	-v,--verbose:		verbose option
 	-d,--debug:		debug option
-	-x,--exclude [OPTIONS]:	exclude some possible ambiguities from analysis
+	-x,--exclude OPTIONS:	exclude some possible ambiguities from analysis
 		--exclude ret,mac,ttl
 			ret: exclude retransmission analysis
 			mac: exclude MAC addresses analysis
 			ttl: exclude TTL analysis
+	-s,--save FILENAME:	saves results to file FILENAME
+		JSON format - FILENAME should contain the JSON extension
 Examples:
 	./p2a -v ./pcap_files/some_pcap_file.pcapng
-	./p2a --exclude mac,ttl --verbose my-pcap-file.pcap
-
+	./p2a --exclude mac,ttl --verbose my-pcap-file.pcap -s results.json
 ```
+
+I just added the option to save all results to a JSON file. To do so, one can use the `--save file.json` option. It saves all sessions in this file, whether ambiguities were found in them or not. I am currently working on a way to render the JSON file nicely in an HTML file (using some JavaScript)..
 
 #### Other scripts
 
@@ -132,17 +135,13 @@ Each byte of data sent in a TCP connection has an associated *sequence number*. 
 
 When the receiving socket detects an incoming segment of data, it uses the *acknowledgement number* in the TCP header to indicate receipt. After sending a packet of data, the sender will start a retransmission timer of variable length. If it does not receive an acknowledgment before the timer expires, the sender will assume the segment has been lost and will retransmit it.
 
-We can see **TCP retransmission** when the previous packet owns the same acknowledgment, sequence, source port, destination port of the current packet.
+We can see **TCP retransmission** when another packet owns the same acknowledgment and sequence numbers as the current packet.
 
 > TCP Retransmissions are quite common and can be totally normal (if one packet is retransmitted because it was legitimately lost), but can also be the sign of an issue on the network or on a communication.
 
-__Analysis/Code:__
-
-For our analysis on **TCP retransmissions**, we decided to only flag `TCP Retransmissions` errors when the packet is being retransmitted more than once.
-
 #### <a name="overlapping-fragments"></a>4 - Overlapping Fragments
 
-The **IP fragment overlapped** exploit occurs when two fragments contained within the *same IP packet* have offsets that indicate that they **overlap** each other in positioning within the packet. This could mean that either fragment A is being *completely* overwritten by fragment B, or that fragment A is *partially* being overwritten by fragment B. Some operating systems do not properly handle fragments that overlap in this manner and may throw exceptions or behave in other undesirable ways upon receipt of overlapping fragments. This is the basis for the **teardrop attack**.
+The **IP fragment overlapped** exploit occurs when two fragments contained within the *same IP packet* have offsets that indicate that they **overlap** each other in positioning within the packet. This could mean that either fragment A is being *completely* overwritten by fragment B, or that fragment A is *partially* being overwritten by fragment B. Some operating systems do not properly handle fragments that overlap in this manner and may throw exceptions or behave in other undesirable ways upon receipt of overlapping fragments. This is the basis for the **teardrop attack**. (*from Wikipedia*)
 
 Overlapping fragments may also be used in an attempt to **bypass Intrusion Detection Systems**. In this exploit, part of an attack is sent in fragments along with additional random data; future fragments may overwrite the random data with the remainder of the attack. If the completed packet is not properly reassembled at the IDS, the attack will go undetected.
 
