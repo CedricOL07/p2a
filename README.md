@@ -58,7 +58,7 @@ __`SHA(IP, Port)`__
 We made the `sha` script available for debug purposes. It takes as argument an IP address and a port number and returns the SHA1 hash of (IP|Port). This value is used as *session identifier* in the `p2a` script.
 
 ```sh
-make
+make sha
 
 ./sha -h
 Usage:
