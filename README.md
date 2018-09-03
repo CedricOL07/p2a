@@ -1,6 +1,6 @@
 # p2a - Parse PCAP for Anomalies
 
-This project aims at building an easy-to-use tool that will parse a `pcap` file to return any ambiguity found in the TCP packets. We are also implementing UDP analysis and working on adding ARP as well.
+This project aims at building an easy-to-use tool that will parse a `pcap` file to return any ambiguity found in the TCP packets. We are currently working on implementing UDP and ARP analysis as well.
 
 __Outline:__
 * [Contributors](#contributors)
@@ -11,6 +11,7 @@ __Outline:__
     2. [ARP Poisoning](#arp-poisoning)
     3. [TCP Retransmission](#tcp-retransmission)
     4. [Overlapping Fragments](#overlapping-fragments)
+    5. [Multiple TTL values](#multiple-ttl)
   * [Project directories](#dir)
 * [References and external documentation](#references)
 
@@ -26,7 +27,7 @@ __Outline:__
 ### <a name="launch"></a>Launching our script
 
 ```sh
-make all
+make
 
 ./p2a -v ./pcap_files/some_pcap_file.pcap
 ```
@@ -36,11 +37,52 @@ make all
 ```
 $ ./p2a -h
 Usage: ./p2a [OPTIONS] FILE
-	-l: if the capture is a Linux Cooked Capture
-	-h: display this help message
-	-v: verbose option
-Example: ./p2a -v ./pcap_files/some_pcap_file.pcapng
+	-h,--help:		display this help message
+	-v,--verbose:		verbose option
+	-d,--debug:		debug option
+	-x,--exclude [OPTIONS]:	exclude some possible ambiguities from analysis
+		--exclude ret,mac,ttl
+			ret: exclude retransmission analysis
+			mac: exclude MAC addresses analysis
+			ttl: exclude TTL analysis
+Examples:
+	./p2a -v ./pcap_files/some_pcap_file.pcapng
+	./p2a --exclude mac,ttl --verbose my-pcap-file.pcap
+
 ```
+
+#### Other scripts
+
+__`SHA(IP, Port)`__
+
+We made the `sha` script available for debug purposes. It takes as argument an IP address and a port number and returns the SHA1 hash of (IP|Port). This value is used as *session identifier* in the `p2a` script.
+
+```sh
+make
+
+./sha -h
+Usage:
+./sha IP PORT
+
+./sha 127.0.0.1 12345
+IP:   127.0.0.1
+Port: 12345
+SHA1: 21bf549a8095063f49cff573e689b6b10365f4c8
+```
+
+__IP addresses and `whois`__
+
+If one session is suspicious, it can be useful to know what it relates to. To do so, one can use Wireshark and apply a display filter to only display the given session.
+
+A simpler approach can be to use [`whois`](https://whois.icann.org/en) to know who owns the IP address.
+
+To use `whois` with all of the IP addresses from the capture file:
+
+```sh
+for ip in $(tshark -r file.pcapng -T fields -e ip.dst -e ip.src | egrep -o "[0-9]+.[0-9]+.[0-9]+.[0-9]+" | sort | uniq); do whois $ip | egrep "^[Oo]rgani[sz]ation"; done
+```
+
+> If `tshark` does not work, [here's a C script](https://gist.github.com/jbdrvl/eb8d8623714c60384b241ae8068a407d) that will do the same thing.
 
 ### <a name="anomalies"></a>Anomalies
 
@@ -106,6 +148,17 @@ Overlapping fragments may also be used in an attempt to **bypass Intrusion Detec
 
 > __Teardrop attack:__ involves sending mangled IP fragments with overlapping, oversized payloads to the target machine.
 
+> NOT IMPLEMENTED YET
+
+#### <a name="multiple-ttl"></a>5 - Multiple TTL values
+
+If we observe multiple TTL values for a given session, it could mean that the route has changed, meaning that the packets do not follow the same path as the end of the connection as they did at the beginning. This could be due to outside genuine changes but could also mean an attacker changes the route the packets take (to do a MiTM attack for example).
+
+However, most of the time, one session has two or three different TTL values throughout the whole connection: most of the time, the client and the server do not use the same initial TTL values.
+
+The script returns an error if there are more than two different TTL values for a given session.
+
+
 ### <a name="dir"></a>Project directories
 
 | Directory | Description/content  |
@@ -127,6 +180,10 @@ Overlapping fragments may also be used in an attempt to **bypass Intrusion Detec
 * [`libpcap` tutorial](http://yuba.stanford.edu/~casado/pcap)
 * [Using `libpcap` in C](https://www.devdungeon.com/content/using-libpcap-c)
 * [`pcap.h` manual page](http://www.manpagez.com/man/3/pcap/)
+
+### TCP Analysis
+* [Packet Reassembly - Wireshark](https://www.wireshark.org/docs/wsug_html_chunked/ChAdvReassemblySection.html#ChAdvReassemblyTcp)
+* [TCP Analysis - Wireshark](https://www.wireshark.org/docs/wsug_html_chunked/ChAdvTCPAnalysis.html)
 
 ### TTL Expiry Attack
 * [TTL - Wikipedia](https://en.wikipedia.org/wiki/Time_to_live)
