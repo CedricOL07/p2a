@@ -62,4 +62,4 @@ nc -l -M 5 5555
 nc -M 5 127.0.0.1 5555
 ```
 
-> We are still working on this option, but have issues finding the right `netcat` >:|
+The `-M` option is only on the OpenBSD version of `netcat`. To get it: `apt-get install netcat-openbsd`
